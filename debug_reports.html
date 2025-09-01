@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Reports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Debug Reports System</h1>
+    
+    <div class="section">
+        <h2>1. Check Current localStorage</h2>
+        <button onclick="checkLocalStorage()">Check localStorage</button>
+        <div id="localStorage-output"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. Add Test Report</h2>
+        <button onclick="addTestReport()">Add Test Report</button>
+        <div id="addReport-output"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. Test Mock Firestore Collection</h2>
+        <button onclick="testMockFirestore()">Test Mock Collection</button>
+        <div id="mockFirestore-output"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. Simulate Admin Panel Query</h2>
+        <button onclick="simulateAdminQuery()">Simulate Admin Query</button>
+        <div id="adminQuery-output"></div>
+    </div>
+
+    <script>
+        function checkLocalStorage() {
+            const output = document.getElementById('localStorage-output');
+            try {
+                const data = localStorage.getItem('mockFirestoreData');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    output.innerHTML = `
+                        <p class="success">✅ localStorage data found</p>
+                        <pre>${JSON.stringify(parsed, null, 2)}</pre>
+                    `;
+                } else {
+                    output.innerHTML = '<p class="error">❌ No mockFirestoreData found in localStorage</p>';
+                }
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        function addTestReport() {
+            const output = document.getElementById('addReport-output');
+            try {
+                const currentYear = '27';
+                const testReport = {
+                    id: 'test-report-' + Date.now(),
+                    type: 'comment',
+                    actionId: 'test-action-123',
+                    actionTitle: 'Test Action',
+                    commentId: 'test-comment-456',
+                    commentText: 'This is a test comment that was reported',
+                    commentAuthor: 'Test Author',
+                    reportedBy: 'test-user-uid',
+                    reportedByName: 'Test Reporter',
+                    reason: 'Spam',
+                    additionalInfo: 'This is a test report for debugging',
+                    status: 'pending',
+                    reportedAt: new Date(),
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Get existing data
+                let storedData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                // Initialize structure if needed
+                if (!storedData.years) storedData.years = {};
+                if (!storedData.years[currentYear]) storedData.years[currentYear] = {};
+                if (!storedData.years[currentYear].reports) storedData.years[currentYear].reports = [];
+                
+                // Add the test report
+                storedData.years[currentYear].reports.push(testReport);
+                
+                // Save back to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(storedData));
+                
+                output.innerHTML = `
+                    <p class="success">✅ Test report added successfully!</p>
+                    <p>Total reports for year ${currentYear}: ${storedData.years[currentYear].reports.length}</p>
+                    <pre>${JSON.stringify(testReport, null, 2)}</pre>
+                `;
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        function testMockFirestore() {
+            const output = document.getElementById('mockFirestore-output');
+            try {
+                // Test the collection path generation
+                const currentYear = '27';
+                const expectedPath = `years/${currentYear}/reports`;
+                
+                output.innerHTML = `
+                    <p class="success">✅ Mock Firestore test</p>
+                    <p><strong>Expected collection path:</strong> ${expectedPath}</p>
+                    <p><strong>Collection key extraction:</strong> ${expectedPath.split('/').pop()}</p>
+                `;
+                
+                // Test if we can access the data using the same logic as mock firestore
+                const storedData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                const actualCollectionKey = expectedPath.split('/').pop(); // 'reports'
+                
+                if (storedData.years && storedData.years[currentYear] && storedData.years[currentYear][actualCollectionKey]) {
+                    const reports = storedData.years[currentYear][actualCollectionKey];
+                    output.innerHTML += `
+                        <p class="success">✅ Found ${reports.length} reports in collection</p>
+                        <pre>${JSON.stringify(reports, null, 2)}</pre>
+                    `;
+                } else {
+                    output.innerHTML += '<p class="warning">⚠️ No reports found in expected location</p>';
+                }
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        function simulateAdminQuery() {
+            const output = document.getElementById('adminQuery-output');
+            try {
+                // Simulate what the admin panel does
+                const currentYear = '27';
+                const collectionPath = `years/${currentYear}/reports`;
+                const actualCollectionKey = collectionPath.split('/').pop();
+                
+                // Get current year-specific data (like getCurrentYearMockData)
+                const storedData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                let currentYearData = {};
+                
+                if (storedData.years && storedData.years[currentYear]) {
+                    currentYearData = storedData.years[currentYear];
+                } else {
+                    currentYearData = {
+                        users: [],
+                        committees: [],
+                        projects: [],
+                        conversations: [],
+                        reports: [],
+                        transactions: [],
+                        'vorabi-subjects': []
+                    };
+                }
+                
+                const reports = currentYearData[actualCollectionKey] || [];
+                
+                // Simulate the docs mapping
+                const mockDocs = reports.map(report => ({
+                    id: report.id,
+                    data: () => report,
+                    exists: () => true
+                }));
+                
+                output.innerHTML = `
+                    <p class="success">✅ Admin query simulation</p>
+                    <p><strong>Collection path:</strong> ${collectionPath}</p>
+                    <p><strong>Actual collection key:</strong> ${actualCollectionKey}</p>
+                    <p><strong>Found ${mockDocs.length} report documents</strong></p>
+                `;
+                
+                if (mockDocs.length > 0) {
+                    output.innerHTML += '<h4>Reports found:</h4>';
+                    mockDocs.forEach((doc, index) => {
+                        const data = doc.data();
+                        output.innerHTML += `
+                            <div style="border: 1px solid #ddd; margin: 5px; padding: 10px;">
+                                <strong>Report ${index + 1}:</strong> ${data.reason} - ${data.status}<br>
+                                <small>ID: ${doc.id}</small>
+                            </div>
+                        `;
+                    });
+                } else {
+                    output.innerHTML += '<p class="warning">⚠️ No reports found</p>';
+                }
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-run initial check
+        window.onload = function() {
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

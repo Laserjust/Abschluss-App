@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Test Reports</title>
+</head>
+<body>
+    <h1>Create Test Reports for Moderation System</h1>
+    <button onclick="createTestReports()">Create Test Reports</button>
+    <div id="output"></div>
+
+    <script>
+        function createTestReports() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Creating test reports...</p>';
+            
+            try {
+                const currentYear = new Date().getFullYear();
+                
+                // Get existing data or create new structure
+                let mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) {
+                    mockData.years[currentYear] = {
+                        users: [],
+                        committees: [],
+                        projects: [],
+                        conversations: [],
+                        reports: [],
+                        transactions: [],
+                        'vorabi-subjects': []
+                    };
+                }
+                
+                // Create test reports that match existing messages from Chat.jsx mock data
+                const testReports = [
+                    {
+                        id: 'report-test-1',
+                        messageId: '2', // Matches mock message ID from Chat.jsx
+                        conversationId: 'test-conv-1',
+                        reportedBy: 'student-test-uid',
+                        reportedByName: 'Test Student',
+                        reportedAt: new Date(),
+                        reason: 'Unangemessener Inhalt',
+                        additionalInfo: 'Test-Meldung für Moderationssystem',
+                        messageText: 'Ja, das klingt nach einem guten Plan!', // Actual text from mock message ID '2'
+                        messageSender: 'user2',
+                        messageSenderName: 'Max Mustermann',
+                        status: 'pending',
+                        priority: 'medium',
+                        conversationType: 'group',
+                        conversationName: 'Klassen-Chat 12a',
+                        reportType: 'message'
+                    },
+                    {
+                        id: 'report-test-2',
+                        messageId: '4', // Matches mock message ID from Chat.jsx
+                        conversationId: 'test-conv-1',
+                        reportedBy: 'admin-test-uid',
+                        reportedByName: 'Administrator',
+                        reportedAt: new Date(),
+                        reason: 'Beleidigung',
+                        additionalInfo: 'Weitere Test-Meldung',
+                        messageText: 'Super! Kann ich irgendwie helfen?', // Actual text from mock message ID '4'
+                        messageSender: 'current-user',
+                        messageSenderName: 'Ich',
+                        status: 'pending',
+                        priority: 'high',
+                        conversationType: 'group',
+                        conversationName: 'Klassen-Chat 12a',
+                        reportType: 'message'
+                    }
+                ];
+                
+                // Add reports to mock data
+                mockData.years[currentYear].reports = testReports;
+                
+                // Save to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                output.innerHTML = `
+                    <p style="color: green;">✅ Successfully created ${testReports.length} test reports!</p>
+                    <p>Reports created:</p>
+                    <ul>
+                        ${testReports.map(report => 
+                            `<li>Message ID: ${report.messageId} - ${report.reason} (${report.priority})</li>`
+                        ).join('')}
+                    </ul>
+                    <p>You can now test the moderation system in the Chat and AdminPanel.</p>
+                `;
+                
+                console.log('📊 Test reports created:', testReports);
+                console.log('📄 Current localStorage data:', mockData);
+                
+            } catch (error) {
+                output.innerHTML = `<p style="color: red;">❌ Error creating test reports: ${error.message}</p>`;
+                console.error('Error creating test reports:', error);
+            }
+        }
+        
+        // Auto-create reports on page load
+        window.onload = function() {
+            createTestReports();
+        };
+    </script>
+</body>
+</html>

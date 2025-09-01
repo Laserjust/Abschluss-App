@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug localStorage Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .report-item {
+            background: #f9f9f9;
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .field {
+            margin: 5px 0;
+        }
+        .field strong {
+            color: #555;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 localStorage Debug Tool</h1>
+        
+        <div class="section">
+            <h3>Aktuelle Jahr-Einstellung</h3>
+            <div id="currentYearInfo"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Alle localStorage Keys</h3>
+            <div id="allKeys"></div>
+        </div>
+        
+        <div class="section">
+            <h3>mockFirestoreData Struktur</h3>
+            <div id="mockDataStructure"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Reports im aktuellen Jahr</h3>
+            <div id="currentYearReports"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Reports in allen Jahren</h3>
+            <div id="allYearReports"></div>
+        </div>
+        
+        <div class="section">
+            <h3>Aktionen</h3>
+            <button onclick="refreshData()">🔄 Daten aktualisieren</button>
+            <button onclick="clearAllData()">🗑️ Alle Daten löschen</button>
+            <button onclick="setCurrentYear('27')">📅 Jahr auf '27' setzen</button>
+            <button onclick="setCurrentYear('2025')">📅 Jahr auf '2025' setzen</button>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            console.log(message);
+        }
+
+        function displayCurrentYear() {
+            const currentYear = localStorage.getItem('currentYear');
+            const yearInfo = document.getElementById('currentYearInfo');
+            yearInfo.innerHTML = `
+                <div class="field"><strong>Gespeichertes Jahr:</strong> ${currentYear || 'Nicht gesetzt'}</div>
+                <div class="field"><strong>Aktuelles Jahr (Date):</strong> ${new Date().getFullYear()}</div>
+            `;
+        }
+
+        function displayAllKeys() {
+            const keys = Object.keys(localStorage);
+            const keysDiv = document.getElementById('allKeys');
+            keysDiv.innerHTML = `
+                <div class="field"><strong>Anzahl Keys:</strong> ${keys.length}</div>
+                <pre>${keys.join('\n')}</pre>
+            `;
+        }
+
+        function displayMockDataStructure() {
+            const mockData = localStorage.getItem('mockFirestoreData');
+            const structureDiv = document.getElementById('mockDataStructure');
+            
+            if (!mockData) {
+                structureDiv.innerHTML = '<div class="field">Keine mockFirestoreData gefunden</div>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(mockData);
+                const years = Object.keys(data.years || {});
+                
+                let html = `<div class="field"><strong>Verfügbare Jahre:</strong> ${years.join(', ')}</div>`;
+                
+                years.forEach(year => {
+                    const yearData = data.years[year];
+                    const reportCount = yearData.reports ? yearData.reports.length : 0;
+                    html += `<div class="field"><strong>Jahr ${year}:</strong> ${reportCount} Reports</div>`;
+                });
+                
+                structureDiv.innerHTML = html;
+            } catch (e) {
+                structureDiv.innerHTML = `<div class="field">Fehler beim Parsen: ${e.message}</div>`;
+            }
+        }
+
+        function displayCurrentYearReports() {
+            const currentYear = localStorage.getItem('currentYear') || '27';
+            const mockData = localStorage.getItem('mockFirestoreData');
+            const reportsDiv = document.getElementById('currentYearReports');
+            
+            if (!mockData) {
+                reportsDiv.innerHTML = '<div class="field">Keine mockFirestoreData gefunden</div>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(mockData);
+                const reports = data.years?.[currentYear]?.reports || [];
+                
+                let html = `<div class="field"><strong>Jahr:</strong> ${currentYear}</div>`;
+                html += `<div class="field"><strong>Anzahl Reports:</strong> ${reports.length}</div>`;
+                
+                reports.forEach((report, index) => {
+                    html += `
+                        <div class="report-item">
+                            <div class="field"><strong>Report ${index + 1}:</strong></div>
+                            <div class="field"><strong>ID:</strong> ${report.id || 'Nicht gesetzt'}</div>
+                            <div class="field"><strong>Autor ID:</strong> ${report.authorId || 'Nicht gesetzt'}</div>
+                            <div class="field"><strong>Autor Name:</strong> ${report.authorName || 'Nicht gesetzt'}</div>
+                            <div class="field"><strong>Gemeldet von ID:</strong> ${report.reportedBy || 'Nicht gesetzt'}</div>
+                            <div class="field"><strong>Gemeldet von Name:</strong> ${report.reportedByName || 'Nicht gesetzt'}</div>
+                            <div class="field"><strong>Gemeldet am:</strong> ${report.reportedAt || 'Nicht gesetzt'}</div>
+                            <div class="field"><strong>Grund:</strong> ${report.reason || 'Nicht gesetzt'}</div>
+                            <div class="field"><strong>Text:</strong> ${report.commentText || 'Nicht gesetzt'}</div>
+                        </div>
+                    `;
+                });
+                
+                reportsDiv.innerHTML = html;
+            } catch (e) {
+                reportsDiv.innerHTML = `<div class="field">Fehler beim Parsen: ${e.message}</div>`;
+            }
+        }
+
+        function displayAllYearReports() {
+            const mockData = localStorage.getItem('mockFirestoreData');
+            const allReportsDiv = document.getElementById('allYearReports');
+            
+            if (!mockData) {
+                allReportsDiv.innerHTML = '<div class="field">Keine mockFirestoreData gefunden</div>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(mockData);
+                const years = Object.keys(data.years || {});
+                
+                let html = '';
+                
+                years.forEach(year => {
+                    const reports = data.years[year].reports || [];
+                    html += `<h4>Jahr ${year} (${reports.length} Reports)</h4>`;
+                    
+                    reports.forEach((report, index) => {
+                        html += `
+                            <div class="report-item">
+                                <div class="field"><strong>Report ${index + 1}:</strong> ${report.id || 'Keine ID'}</div>
+                                <div class="field"><strong>Autor:</strong> ${report.authorName || 'Unbekannt'} (ID: ${report.authorId || 'Keine ID'})</div>
+                                <div class="field"><strong>Gemeldet von:</strong> ${report.reportedByName || 'Unbekannt'} (ID: ${report.reportedBy || 'Keine ID'})</div>
+                                <div class="field"><strong>Zeitstempel:</strong> ${report.reportedAt || 'Unbekannt'}</div>
+                            </div>
+                        `;
+                    });
+                });
+                
+                allReportsDiv.innerHTML = html || '<div class="field">Keine Reports gefunden</div>';
+            } catch (e) {
+                allReportsDiv.innerHTML = `<div class="field">Fehler beim Parsen: ${e.message}</div>`;
+            }
+        }
+
+        function refreshData() {
+            displayCurrentYear();
+            displayAllKeys();
+            displayMockDataStructure();
+            displayCurrentYearReports();
+            displayAllYearReports();
+            log('Daten aktualisiert');
+        }
+
+        function clearAllData() {
+            if (confirm('Wirklich alle localStorage-Daten löschen?')) {
+                localStorage.clear();
+                refreshData();
+                log('Alle Daten gelöscht');
+            }
+        }
+
+        function setCurrentYear(year) {
+            localStorage.setItem('currentYear', year);
+            refreshData();
+            log(`Jahr auf ${year} gesetzt`);
+        }
+
+        // Initial load
+        refreshData();
+    </script>
+</body>
+</html>

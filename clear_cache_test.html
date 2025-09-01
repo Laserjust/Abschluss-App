@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache Test & Clear</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background: #1565c0;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cache Test & Clear Tool</h1>
+    
+    <div id="status" class="status info">
+        Bereit zum Testen...
+    </div>
+    
+    <h2>Cache Management</h2>
+    <button class="button" onclick="clearAllCache()">Alle Caches löschen</button>
+    <button class="button" onclick="unregisterServiceWorkers()">Service Workers deregistrieren</button>
+    <button class="button" onclick="clearLocalStorage()">Local Storage löschen</button>
+    <button class="button" onclick="clearSessionStorage()">Session Storage löschen</button>
+    <button class="button" onclick="reloadPage()">Hard Reload</button>
+    
+    <h2>PDF Test</h2>
+    <button class="button" onclick="testPDFViewer()">PDF Viewer testen</button>
+    <div id="pdf-container" style="margin-top: 20px;"></div>
+    
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        async function clearAllCache() {
+            try {
+                updateStatus('Lösche Caches...', 'info');
+                
+                // Clear all caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                }
+                
+                updateStatus('Alle Caches erfolgreich gelöscht!', 'success');
+            } catch (error) {
+                updateStatus(`Fehler beim Löschen der Caches: ${error.message}`, 'error');
+            }
+        }
+        
+        async function unregisterServiceWorkers() {
+            try {
+                updateStatus('Deregistriere Service Workers...', 'info');
+                
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(
+                        registrations.map(registration => registration.unregister())
+                    );
+                }
+                
+                updateStatus('Service Workers erfolgreich deregistriert!', 'success');
+            } catch (error) {
+                updateStatus(`Fehler beim Deregistrieren: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLocalStorage() {
+            try {
+                localStorage.clear();
+                updateStatus('Local Storage erfolgreich gelöscht!', 'success');
+            } catch (error) {
+                updateStatus(`Fehler beim Löschen des Local Storage: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearSessionStorage() {
+            try {
+                sessionStorage.clear();
+                updateStatus('Session Storage erfolgreich gelöscht!', 'success');
+            } catch (error) {
+                updateStatus(`Fehler beim Löschen des Session Storage: ${error.message}`, 'error');
+            }
+        }
+        
+        function reloadPage() {
+            updateStatus('Führe Hard Reload durch...', 'info');
+            // Hard reload
+            window.location.reload(true);
+        }
+        
+        function testPDFViewer() {
+            updateStatus('Teste PDF Viewer...', 'info');
+            
+            // Create a simple test PDF as base64
+            const testPDFBase64 = 'data:application/pdf;base64,JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwKL0xlbmd0aCA0MTEK';
+            
+            const container = document.getElementById('pdf-container');
+            container.innerHTML = `
+                <h3>Test PDF:</h3>
+                <embed src="${testPDFBase64}" type="application/pdf" width="100%" height="400" />
+            `;
+            
+            updateStatus('PDF Viewer Test gestartet!', 'success');
+        }
+        
+        // Check for any cached URLs on page load
+        window.addEventListener('load', async () => {
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    console.log('Verfügbare Caches:', cacheNames);
+                    
+                    for (const cacheName of cacheNames) {
+                        const cache = await caches.open(cacheName);
+                        const requests = await cache.keys();
+                        console.log(`Cache ${cacheName}:`, requests.map(req => req.url));
+                        
+                        // Check for w3.org URLs
+                        const w3URLs = requests.filter(req => req.url.includes('w3.org'));
+                        if (w3URLs.length > 0) {
+                            console.warn('Gefundene w3.org URLs im Cache:', w3URLs.map(req => req.url));
+                            updateStatus(`Warnung: ${w3URLs.length} w3.org URLs im Cache gefunden!`, 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Überprüfen der Caches:', error);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

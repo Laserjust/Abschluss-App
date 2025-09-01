@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurs Upload Test Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1976d2;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .section h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .test-form {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input, select, textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #1976d2;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #1565c0;
+        }
+        button.danger {
+            background-color: #d32f2f;
+        }
+        button.danger:hover {
+            background-color: #c62828;
+        }
+        .results {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            border-left: 4px solid #1976d2;
+        }
+        .error {
+            background-color: #ffebee;
+            border-left-color: #d32f2f;
+            color: #d32f2f;
+        }
+        .success {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-info {
+            flex-grow: 1;
+        }
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .file-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Kurs Upload Test Tool</h1>
+        
+        <div class="section">
+            <h2>📚 Test Kurs Materialien Upload</h2>
+            <div class="test-form">
+                <div class="form-group">
+                    <label for="courseSelect">Kurs auswählen:</label>
+                    <select id="courseSelect">
+                        <option value="">-- Kurs auswählen --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="uploadType">Upload-Typ:</label>
+                    <select id="uploadType">
+                        <option value="material">📄 Material</option>
+                        <option value="assignment">📝 Aufgabe/Hausaufgabe</option>
+                        <option value="exam-info">📋 Prüfungsinfo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fileTitle">Titel/Beschreibung:</label>
+                    <input type="text" id="fileTitle" placeholder="z.B. Übungsblatt Kapitel 3">
+                </div>
+                <div class="form-group">
+                    <label for="fileInput">Datei auswählen:</label>
+                    <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.jpg,.png">
+                </div>
+                <button onclick="simulateUpload()">📤 Upload simulieren</button>
+            </div>
+            <div id="uploadResults" class="results" style="display: none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>📁 Gespeicherte Kursmaterialien</h2>
+            <button onclick="loadCourseData()">🔄 Daten neu laden</button>
+            <div id="courseData" class="file-list"></div>
+        </div>
+
+        <div class="section">
+            <h2>🗑️ Test Daten verwalten</h2>
+            <button onclick="clearAllData()" class="danger">🗑️ Alle Test-Daten löschen</button>
+            <button onclick="createSampleData()">📝 Beispiel-Daten erstellen</button>
+            <div id="dataResults" class="results" style="display: none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 LocalStorage Inspektor</h2>
+            <button onclick="inspectStorage()">🔍 Storage untersuchen</button>
+            <div id="storageInspector"></div>
+        </div>
+    </div>
+
+    <script>
+        // Lade verfügbare Kurse beim Start
+        window.onload = function() {
+            loadAvailableCourses();
+            loadCourseData();
+        };
+
+        function loadAvailableCourses() {
+            const courseSelect = document.getElementById('courseSelect');
+            const currentYear = new Date().getFullYear();
+            const userSelection = JSON.parse(localStorage.getItem(`userCourseSelection_${currentYear}`) || '{}');
+            
+            courseSelect.innerHTML = '<option value="">-- Kurs auswählen --</option>';
+            
+            Object.keys(userSelection).forEach(key => {
+                const course = userSelection[key];
+                if (course && course.name) {
+                    const option = document.createElement('option');
+                    option.value = course.id;
+                    option.textContent = `${course.name} (${course.type})`;
+                    courseSelect.appendChild(option);
+                }
+            });
+            
+            if (Object.keys(userSelection).length === 0) {
+                const option = document.createElement('option');
+                option.value = 'demo';
+                option.textContent = 'Demo Kurs (Mathematik LK)';
+                courseSelect.appendChild(option);
+            }
+        }
+
+        function simulateUpload() {
+            const courseId = document.getElementById('courseSelect').value;
+            const uploadType = document.getElementById('uploadType').value;
+            const fileTitle = document.getElementById('fileTitle').value;
+            const fileInput = document.getElementById('fileInput');
+            const resultsDiv = document.getElementById('uploadResults');
+            
+            if (!courseId || !fileTitle || !fileInput.files[0]) {
+                showResult(resultsDiv, 'Bitte füllen Sie alle Felder aus!', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    // Erstelle neues Upload-Item
+                    const newItem = {
+                        id: Date.now().toString(),
+                        title: fileTitle,
+                        uploadedAt: new Date().toISOString(),
+                        uploadedBy: 'test-user@example.com',
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileType: file.type,
+                        url: e.target.result
+                    };
+                    
+                    // Speichere in MockFirestore
+                    const mockFirestoreData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                    if (!mockFirestoreData.courses) mockFirestoreData.courses = {};
+                    if (!mockFirestoreData.courses[courseId]) {
+                        mockFirestoreData.courses[courseId] = {
+                            materials: [],
+                            assignments: [],
+                            examInfos: []
+                        };
+                    }
+                    
+                    // Füge Item zum entsprechenden Array hinzu
+                    if (uploadType === 'material') {
+                        newItem.type = file.name.split('.').pop().toLowerCase();
+                        mockFirestoreData.courses[courseId].materials.push(newItem);
+                    } else if (uploadType === 'assignment') {
+                        newItem.dueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+                        newItem.completed = false;
+                        mockFirestoreData.courses[courseId].assignments.push(newItem);
+                    } else if (uploadType === 'exam-info') {
+                        mockFirestoreData.courses[courseId].examInfos.push(newItem);
+                    }
+                    
+                    localStorage.setItem('mockFirestoreData', JSON.stringify(mockFirestoreData));
+                    
+                    showResult(resultsDiv, 
+                        `✅ ${uploadType === 'material' ? 'Material' : uploadType === 'assignment' ? 'Aufgabe' : 'Prüfungsinfo'} "${fileTitle}" erfolgreich hochgeladen!\n` +
+                        `📁 Datei: ${file.name} (${(file.size / 1024).toFixed(1)} KB)\n` +
+                        `🆔 ID: ${newItem.id}`, 
+                        'success'
+                    );
+                    
+                    // Form zurücksetzen
+                    document.getElementById('fileTitle').value = '';
+                    document.getElementById('fileInput').value = '';
+                    
+                    // Daten neu laden
+                    loadCourseData();
+                    
+                } catch (error) {
+                    showResult(resultsDiv, `❌ Fehler beim Upload: ${error.message}`, 'error');
+                }
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function loadCourseData() {
+            const dataDiv = document.getElementById('courseData');
+            const mockFirestoreData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+            
+            if (!mockFirestoreData.courses || Object.keys(mockFirestoreData.courses).length === 0) {
+                dataDiv.innerHTML = '<p>Keine Kursdaten gefunden. Erstellen Sie Beispiel-Daten oder laden Sie Dateien hoch.</p>';
+                return;
+            }
+            
+            let html = '';
+            Object.keys(mockFirestoreData.courses).forEach(courseId => {
+                const courseData = mockFirestoreData.courses[courseId];
+                html += `<h3>📚 Kurs ID: ${courseId}</h3>`;
+                
+                // Materialien
+                if (courseData.materials && courseData.materials.length > 0) {
+                    html += '<h4>📄 Materialien:</h4>';
+                    courseData.materials.forEach(material => {
+                        html += createFileItem(material, 'material', courseId);
+                    });
+                }
+                
+                // Aufgaben
+                if (courseData.assignments && courseData.assignments.length > 0) {
+                    html += '<h4>📝 Aufgaben:</h4>';
+                    courseData.assignments.forEach(assignment => {
+                        html += createFileItem(assignment, 'assignment', courseId);
+                    });
+                }
+                
+                // Prüfungsinfos
+                if (courseData.examInfos && courseData.examInfos.length > 0) {
+                    html += '<h4>📋 Prüfungsinfos:</h4>';
+                    courseData.examInfos.forEach(examInfo => {
+                        html += createFileItem(examInfo, 'exam-info', courseId);
+                    });
+                }
+            });
+            
+            dataDiv.innerHTML = html;
+        }
+
+        function createFileItem(item, type, courseId) {
+            const uploadDate = new Date(item.uploadedAt).toLocaleDateString('de-DE');
+            const fileSize = item.fileSize ? `(${(item.fileSize / 1024).toFixed(1)} KB)` : '';
+            
+            return `
+                <div class="file-item">
+                    <div class="file-info">
+                        <strong>${item.title}</strong><br>
+                        <small>📁 ${item.fileName} ${fileSize} • 📅 ${uploadDate} • 👤 ${item.uploadedBy}</small>
+                        ${item.dueDate ? `<br><small>⏰ Fällig: ${new Date(item.dueDate).toLocaleDateString('de-DE')}</small>` : ''}
+                    </div>
+                    <div class="file-actions">
+                        <button onclick="downloadFile('${item.id}', '${courseId}', '${type}')">⬇️ Download</button>
+                        <button onclick="deleteFile('${item.id}', '${courseId}', '${type}')" class="danger">🗑️ Löschen</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function downloadFile(itemId, courseId, type) {
+            const mockFirestoreData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+            const courseData = mockFirestoreData.courses[courseId];
+            
+            let item;
+            if (type === 'material') {
+                item = courseData.materials.find(m => m.id === itemId);
+            } else if (type === 'assignment') {
+                item = courseData.assignments.find(a => a.id === itemId);
+            } else if (type === 'exam-info') {
+                item = courseData.examInfos.find(e => e.id === itemId);
+            }
+            
+            if (item && item.url) {
+                const link = document.createElement('a');
+                link.href = item.url;
+                link.download = item.fileName || item.title;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert(`📥 Download gestartet: ${item.fileName}`);
+            } else {
+                alert('❌ Datei nicht gefunden!');
+            }
+        }
+
+        function deleteFile(itemId, courseId, type) {
+            if (!confirm('Sind Sie sicher, dass Sie diese Datei löschen möchten?')) {
+                return;
+            }
+            
+            const mockFirestoreData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+            const courseData = mockFirestoreData.courses[courseId];
+            
+            if (type === 'material') {
+                courseData.materials = courseData.materials.filter(m => m.id !== itemId);
+            } else if (type === 'assignment') {
+                courseData.assignments = courseData.assignments.filter(a => a.id !== itemId);
+            } else if (type === 'exam-info') {
+                courseData.examInfos = courseData.examInfos.filter(e => e.id !== itemId);
+            }
+            
+            localStorage.setItem('mockFirestoreData', JSON.stringify(mockFirestoreData));
+            alert('🗑️ Datei erfolgreich gelöscht!');
+            loadCourseData();
+        }
+
+        function clearAllData() {
+            if (!confirm('Sind Sie sicher, dass Sie alle Test-Daten löschen möchten?')) {
+                return;
+            }
+            
+            localStorage.removeItem('mockFirestoreData');
+            const currentYear = new Date().getFullYear();
+            localStorage.removeItem(`userCourseSelection_${currentYear}`);
+            
+            const resultsDiv = document.getElementById('dataResults');
+            showResult(resultsDiv, '🗑️ Alle Test-Daten wurden gelöscht!', 'success');
+            loadCourseData();
+            loadAvailableCourses();
+        }
+
+        function createSampleData() {
+            const sampleData = {
+                courses: {
+                    'demo-math-lk': {
+                        materials: [
+                            {
+                                id: 'sample-1',
+                                title: 'Übungsblatt Integralrechnung',
+                                uploadedAt: new Date().toISOString(),
+                                uploadedBy: 'lehrer@schule.de',
+                                fileName: 'uebung_integral.pdf',
+                                fileSize: 245760,
+                                fileType: 'application/pdf',
+                                type: 'pdf',
+                                url: 'data:application/pdf;base64,sample'
+                            }
+                        ],
+                        assignments: [
+                            {
+                                id: 'sample-2',
+                                title: 'Hausaufgabe Kapitel 5',
+                                uploadedAt: new Date().toISOString(),
+                                uploadedBy: 'lehrer@schule.de',
+                                fileName: 'hausaufgabe_kap5.docx',
+                                fileSize: 123456,
+                                fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                                completed: false,
+                                url: 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,sample'
+                            }
+                        ],
+                        examInfos: [
+                            {
+                                id: 'sample-3',
+                                title: 'Klausur Informationen Q1',
+                                uploadedAt: new Date().toISOString(),
+                                uploadedBy: 'lehrer@schule.de',
+                                fileName: 'klausur_info_q1.pdf',
+                                fileSize: 98765,
+                                fileType: 'application/pdf',
+                                url: 'data:application/pdf;base64,sample'
+                            }
+                        ]
+                    }
+                }
+            };
+            
+            localStorage.setItem('mockFirestoreData', JSON.stringify(sampleData));
+            
+            const resultsDiv = document.getElementById('dataResults');
+            showResult(resultsDiv, '📝 Beispiel-Daten wurden erstellt!', 'success');
+            loadCourseData();
+        }
+
+        function inspectStorage() {
+            const inspector = document.getElementById('storageInspector');
+            const currentYear = new Date().getFullYear();
+            
+            let html = '<h3>🔍 LocalStorage Inhalt:</h3>';
+            
+            // MockFirestore Daten
+            const mockData = localStorage.getItem('mockFirestoreData');
+            html += '<h4>📊 MockFirestore Daten:</h4>';
+            if (mockData) {
+                html += `<pre>${JSON.stringify(JSON.parse(mockData), null, 2)}</pre>`;
+            } else {
+                html += '<p>Keine MockFirestore Daten gefunden.</p>';
+            }
+            
+            // Kursauswahl Daten
+            const courseSelection = localStorage.getItem(`userCourseSelection_${currentYear}`);
+            html += '<h4>🎓 Kursauswahl Daten:</h4>';
+            if (courseSelection) {
+                html += `<pre>${JSON.stringify(JSON.parse(courseSelection), null, 2)}</pre>`;
+            } else {
+                html += '<p>Keine Kursauswahl Daten gefunden.</p>';
+            }
+            
+            inspector.innerHTML = html;
+        }
+
+        function showResult(element, message, type) {
+            element.style.display = 'block';
+            element.className = `results ${type}`;
+            element.innerHTML = message.replace(/\n/g, '<br>');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Notification Creation</title>
+</head>
+<body>
+    <h1>Test Notification Creation</h1>
+    <button onclick="createTestNotification()">Create Test Warning Notification</button>
+    <button onclick="checkNotifications()">Check Notifications in localStorage</button>
+    <div id="output"></div>
+
+    <script>
+        function createTestNotification() {
+            try {
+                // Get current data from localStorage
+                let mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                // Initialize structure if needed
+                const currentYear = new Date().getFullYear();
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) mockData.years[currentYear] = {};
+                if (!mockData.years[currentYear].notifications) mockData.years[currentYear].notifications = [];
+                
+                // Create test notification
+                const testNotification = {
+                    id: 'test-warning-' + Date.now(),
+                    userId: 'demo-user',
+                    type: 'warning',
+                    title: 'Test Verwarnung',
+                    body: 'Dies ist eine Test-Verwarnungsbenachrichtigung.',
+                    priority: 'high',
+                    createdAt: new Date().toISOString(),
+                    read: false,
+                    reportId: 'test-report-123',
+                    reason: 'Test Grund',
+                    messageContent: 'Test Nachrichteninhalt'
+                };
+                
+                // Add notification
+                mockData.years[currentYear].notifications.push(testNotification);
+                
+                // Save back to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                document.getElementById('output').innerHTML = '<p style="color: green;">✅ Test notification created successfully!</p>';
+                console.log('Test notification created:', testNotification);
+                
+            } catch (error) {
+                console.error('Error creating test notification:', error);
+                document.getElementById('output').innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+        
+        function checkNotifications() {
+            try {
+                const mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                const currentYear = new Date().getFullYear();
+                const notifications = mockData.years?.[currentYear]?.notifications || [];
+                
+                document.getElementById('output').innerHTML = 
+                    '<h3>Notifications in localStorage:</h3>' +
+                    '<pre>' + JSON.stringify(notifications, null, 2) + '</pre>';
+                    
+            } catch (error) {
+                console.error('Error checking notifications:', error);
+                document.getElementById('output').innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

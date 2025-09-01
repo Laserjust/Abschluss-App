@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Test</title>
+</head>
+<body>
+    <h1>Quick Notification Test</h1>
+    <button onclick="createAndTest()">Create Notification & Open App</button>
+    <div id="status"></div>
+
+    <script>
+        function createAndTest() {
+            try {
+                // Get current data from localStorage
+                let mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                // Initialize structure if needed
+                const currentYear = new Date().getFullYear();
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) mockData.years[currentYear] = {};
+                if (!mockData.years[currentYear].notifications) mockData.years[currentYear].notifications = [];
+                
+                // Create test notification with demo-user ID
+                const testNotification = {
+                    id: 'quick-test-' + Date.now(),
+                    userId: 'demo-user',
+                    type: 'warning',
+                    title: 'Verwarnung erhalten',
+                    body: 'Sie haben eine Verwarnung wegen unangemessenen Verhaltens erhalten.',
+                    priority: 'high',
+                    createdAt: new Date().toISOString(),
+                    read: false,
+                    reportId: 'test-report-' + Date.now(),
+                    reason: 'Unangemessenes Verhalten',
+                    messageContent: 'Test Nachricht die gemeldet wurde'
+                };
+                
+                // Add notification
+                mockData.years[currentYear].notifications.push(testNotification);
+                
+                // Save back to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                document.getElementById('status').innerHTML = '<p style="color: green;">✅ Notification created! Opening app...</p>';
+                
+                // Open the main app
+                setTimeout(() => {
+                    window.open('http://localhost:3000', '_blank');
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

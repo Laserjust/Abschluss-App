@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Kommentar-Berichte für Actions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        .success {
+            background: #4caf50;
+        }
+        .danger {
+            background: #f44336;
+        }
+        .info {
+            background: #2196f3;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Kommentar-Berichte für Actions</h1>
+        <p>Diese Seite hilft beim Testen der Moderationsfunktionen für Kommentare in Actions.jsx</p>
+        
+        <div class="info">
+            <strong>Hinweis:</strong> Diese Testberichte verwenden Kommentar-IDs aus den Mock-Daten in Actions.jsx
+        </div>
+        
+        <h2>Aktuelle Daten</h2>
+        <button onclick="showCurrentData()">Aktuelle Berichte anzeigen</button>
+        <button onclick="showMockComments()">Mock-Kommentare anzeigen</button>
+        
+        <h2>Test-Berichte erstellen</h2>
+        <button onclick="createTestReports()" class="success">Test-Berichte erstellen</button>
+        <button onclick="clearReports()" class="danger">Alle Berichte löschen</button>
+        
+        <h2>Ausgabe</h2>
+        <pre id="output">Klicken Sie auf eine Schaltfläche, um zu beginnen...</pre>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += message + '\n';
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').textContent = '';
+        }
+        
+        function showCurrentData() {
+            clearOutput();
+            log('=== AKTUELLE KOMMENTAR-BERICHTE ===');
+            
+            try {
+                const reports = JSON.parse(localStorage.getItem('commentReports') || '[]');
+                log(`Anzahl Berichte: ${reports.length}`);
+                
+                if (reports.length > 0) {
+                    reports.forEach((report, index) => {
+                        log(`\nBericht ${index + 1}:`);
+                        log(`  ID: ${report.id}`);
+                        log(`  Typ: ${report.type}`);
+                        log(`  Kommentar-ID: ${report.commentId}`);
+                        log(`  Kommentar-Text: ${report.commentText}`);
+                        log(`  Autor: ${report.commentAuthor}`);
+                        log(`  Grund: ${report.reason}`);
+                        log(`  Status: ${report.status}`);
+                        log(`  Gemeldet am: ${report.reportedAt}`);
+                    });
+                } else {
+                    log('Keine Berichte gefunden.');
+                }
+            } catch (error) {
+                log('Fehler beim Laden der Berichte: ' + error.message);
+            }
+        }
+        
+        function showMockComments() {
+            clearOutput();
+            log('=== MOCK-KOMMENTARE AUS ACTIONS.JSX ===');
+            
+            // Diese IDs stammen aus den Mock-Daten in Actions.jsx
+            const mockComments = [
+                { id: 1, author: 'Lisa M.', text: 'Designs sind fertig! Bitte um Feedback.', actionTitle: 'Abi-Pulli Bestellung' },
+                { id: 2, author: 'Max K.', text: 'Angebote sind da. Günstigster Anbieter: 15€/Stück', actionTitle: 'Abi-Pulli Bestellung' },
+                { id: 1, author: 'Clara B.', text: 'Mottos stehen fest: Kindheitshelden, 80er, Pyjama, Tausch, Abimotto', actionTitle: 'Mottowoche Organisation' }
+            ];
+            
+            log(`Verfügbare Mock-Kommentare: ${mockComments.length}`);
+            mockComments.forEach((comment, index) => {
+                log(`\nKommentar ${index + 1}:`);
+                log(`  ID: ${comment.id}`);
+                log(`  Autor: ${comment.author}`);
+                log(`  Text: ${comment.text}`);
+                log(`  Aktion: ${comment.actionTitle}`);
+            });
+        }
+        
+        function createTestReports() {
+            clearOutput();
+            log('=== ERSTELLE TEST-BERICHTE ===');
+            
+            try {
+                const testReports = [
+                    {
+                        id: 'comment_report_1',
+                        type: 'comment',
+                        actionId: 1,
+                        actionTitle: 'Abi-Pulli Bestellung',
+                        commentId: 1,
+                        commentText: 'Designs sind fertig! Bitte um Feedback.',
+                        commentAuthor: 'Lisa M.',
+                        reportedBy: 'test_user_1',
+                        reportedByName: 'Test Benutzer',
+                        reason: 'Spam',
+                        additionalInfo: 'Dieser Kommentar scheint nicht relevant zu sein.',
+                        reportedAt: new Date().toISOString(),
+                        status: 'pending',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'comment_report_2',
+                        type: 'comment',
+                        actionId: 1,
+                        actionTitle: 'Abi-Pulli Bestellung',
+                        commentId: 2,
+                        commentText: 'Angebote sind da. Günstigster Anbieter: 15€/Stück',
+                        commentAuthor: 'Max K.',
+                        reportedBy: 'test_user_2',
+                        reportedByName: 'Anderer Benutzer',
+                        reason: 'Unangemessener Inhalt',
+                        additionalInfo: 'Preisangaben könnten falsch sein.',
+                        reportedAt: new Date().toISOString(),
+                        status: 'pending',
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                // Bestehende Berichte laden
+                const existingReports = JSON.parse(localStorage.getItem('commentReports') || '[]');
+                
+                // Neue Berichte hinzufügen (Duplikate vermeiden)
+                testReports.forEach(newReport => {
+                    const exists = existingReports.some(existing => 
+                        existing.commentId === newReport.commentId && 
+                        existing.actionId === newReport.actionId
+                    );
+                    
+                    if (!exists) {
+                        existingReports.push(newReport);
+                        log(`✅ Bericht für Kommentar ${newReport.commentId} erstellt`);
+                    } else {
+                        log(`⚠️ Bericht für Kommentar ${newReport.commentId} existiert bereits`);
+                    }
+                });
+                
+                // Speichern
+                localStorage.setItem('commentReports', JSON.stringify(existingReports));
+                
+                log(`\n✅ Test-Berichte erfolgreich erstellt!`);
+                log(`Gesamtanzahl Berichte: ${existingReports.length}`);
+                
+            } catch (error) {
+                log('❌ Fehler beim Erstellen der Test-Berichte: ' + error.message);
+            }
+        }
+        
+        function clearReports() {
+            clearOutput();
+            log('=== LÖSCHE ALLE BERICHTE ===');
+            
+            try {
+                localStorage.removeItem('commentReports');
+                log('✅ Alle Kommentar-Berichte wurden gelöscht.');
+            } catch (error) {
+                log('❌ Fehler beim Löschen: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

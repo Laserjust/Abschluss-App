@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Debug - AdminPanel Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #28a745;
+        }
+        .success:hover {
+            background: #1e7e34;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .danger:hover {
+            background: #c82333;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .report-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        .report-content {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-style: italic;
+            margin: 10px 0;
+        }
+        .report-meta {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Direct Debug - AdminPanel Simulation</h1>
+        <p>Dieses Tool simuliert exakt das AdminPanel-Verhalten und zeigt die Reports an.</p>
+        
+        <div>
+            <button onclick="setYearAndCreateReports()" class="success">🚀 Jahr setzen + Reports erstellen</button>
+            <button onclick="loadReportsLikeAdminPanel()">📊 Reports laden (wie AdminPanel)</button>
+            <button onclick="clearAllData()" class="danger">🗑️ Alle Daten löschen</button>
+            <button onclick="showRawData()">🔍 Raw Data anzeigen</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+        <div id="reportsDisplay"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function setYearAndCreateReports() {
+            try {
+                // Set year to '27'
+                localStorage.setItem('currentYear', '27');
+                log('✅ currentYear auf "27" gesetzt');
+                
+                // Create mock data structure
+                const mockData = {
+                    years: {
+                        '27': {
+                            committees: [],
+                            projects: [],
+                            users: [],
+                            conversations: [],
+                            reports: [],
+                            'vorabi-subjects': [],
+                            transactions: []
+                        }
+                    }
+                };
+                
+                // Create test reports with EXACT field names
+                const testReports = [
+                    {
+                        id: `direct-test-${Date.now()}-1`,
+                        commentText: 'Das ist ein sehr unangemessener Kommentar, der gemeldet werden sollte.',
+                        reason: 'Unangemessener Inhalt',
+                        reportedBy: 'user-reporter-1',
+                        reportedByName: 'Lisa Weber',
+                        authorId: 'user-author-1',
+                        authorName: 'Tom Müller',
+                        reportedAt: {
+                            seconds: Math.floor(Date.now() / 1000),
+                            nanoseconds: 0
+                        },
+                        conversationId: 'conv-123',
+                        commentId: 'comment-456'
+                    },
+                    {
+                        id: `direct-test-${Date.now()}-2`,
+                        commentText: 'Spam-Nachricht mit vielen Links und Werbung.',
+                        reason: 'Spam',
+                        reportedBy: 'user-reporter-2',
+                        reportedByName: 'Sarah Klein',
+                        authorId: 'user-author-2',
+                        authorName: 'Mike Johnson',
+                        reportedAt: {
+                            seconds: Math.floor(Date.now() / 1000) - 3600,
+                            nanoseconds: 0
+                        },
+                        conversationId: 'conv-789',
+                        commentId: 'comment-101'
+                    },
+                    {
+                        id: `direct-test-${Date.now()}-3`,
+                        commentText: 'Beleidigender Kommentar über andere Schüler.',
+                        reason: 'Beleidigung',
+                        reportedBy: 'user-reporter-3',
+                        reportedByName: 'David Schmidt',
+                        authorId: 'user-author-3',
+                        authorName: 'Emma Brown',
+                        reportedAt: {
+                            seconds: Math.floor(Date.now() / 1000) - 7200,
+                            nanoseconds: 0
+                        },
+                        conversationId: 'conv-456',
+                        commentId: 'comment-789'
+                    }
+                ];
+                
+                mockData.years['27'].reports = testReports;
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                log(`✅ ${testReports.length} Test-Reports für Jahr 27 erstellt`);
+                testReports.forEach((report, index) => {
+                    log(`   ${index + 1}. authorName: "${report.authorName}", reportedByName: "${report.reportedByName}"`);
+                });
+                
+            } catch (error) {
+                log('❌ Fehler beim Erstellen der Reports: ' + error.message);
+            }
+        }
+
+        function loadReportsLikeAdminPanel() {
+            try {
+                log('🔍 Lade Reports wie AdminPanel...');
+                
+                const currentYear = localStorage.getItem('currentYear') || '27';
+                log(`📅 Verwende Jahr: ${currentYear}`);
+                
+                const storedData = localStorage.getItem('mockFirestoreData');
+                if (!storedData) {
+                    log('📭 Keine mockFirestoreData gefunden');
+                    return;
+                }
+                
+                const mockData = JSON.parse(storedData);
+                const reportsData = mockData.years?.[currentYear]?.reports || [];
+                
+                log(`📊 Gefunden ${reportsData.length} reports für Jahr ${currentYear}`);
+                
+                if (reportsData.length === 0) {
+                    log('❌ Keine Reports gefunden!');
+                    return;
+                }
+                
+                // Simulate exact AdminPanel mapping
+                const reports = reportsData.map(data => {
+                    log(`📄 Verarbeite Report: ${data.id}`);
+                    log(`   📝 data.reportedByName: "${data.reportedByName}"`);
+                    log(`   📝 data.reportedBy: "${data.reportedBy}"`);
+                    log(`   📝 data.authorName: "${data.authorName}"`);
+                    log(`   📝 data.messageSenderName: "${data.messageSenderName}"`);
+                    log(`   📝 data.messageSender: "${data.messageSender}"`);
+                    
+                    // Handle timestamp
+                    let formattedTimestamp = 'Unbekannt';
+                    if (data.reportedAt) {
+                        if (typeof data.reportedAt.toDate === 'function') {
+                            formattedTimestamp = data.reportedAt.toDate().toLocaleString('de-DE');
+                        } else if (data.reportedAt.seconds) {
+                            formattedTimestamp = new Date(data.reportedAt.seconds * 1000).toLocaleString('de-DE');
+                        } else if (data.reportedAt instanceof Date) {
+                            formattedTimestamp = data.reportedAt.toLocaleString('de-DE');
+                        }
+                    }
+                    
+                    const mappedReport = {
+                        id: data.id,
+                        content: data.commentText || data.messageText || 'Kein Text verfügbar',
+                        reporter: data.reportedByName || data.reportedBy || 'Unbekannt',
+                        reported: data.authorName || data.messageSenderName || data.messageSender || 'Unbekannt',
+                        timestamp: formattedTimestamp,
+                        reason: data.reason || 'Kein Grund angegeben'
+                    };
+                    
+                    log(`   ➤ Final reporter: "${mappedReport.reporter}"`);
+                    log(`   ➤ Final reported: "${mappedReport.reported}"`);
+                    log(`   ➤ Final timestamp: "${mappedReport.timestamp}"`);
+                    
+                    return mappedReport;
+                });
+                
+                log('✅ Reports erfolgreich gemappt');
+                displayReports(reports);
+                
+            } catch (error) {
+                log('❌ Fehler beim Laden der Reports: ' + error.message);
+            }
+        }
+
+        function displayReports(reports) {
+            const displayDiv = document.getElementById('reportsDisplay');
+            
+            if (reports.length === 0) {
+                displayDiv.innerHTML = '<p>Keine Reports gefunden.</p>';
+                return;
+            }
+            
+            let html = '<h2>📋 Reports (wie AdminPanel sie anzeigt):</h2>';
+            
+            reports.forEach(report => {
+                html += `
+                    <div class="report-card">
+                        <h3>Gemeldete Nachricht</h3>
+                        <div class="report-content">"${report.content}"</div>
+                        <div class="report-meta">
+                            <strong>Gemeldet von:</strong> ${report.reporter}<br>
+                            <strong>Autor der Nachricht:</strong> ${report.reported}<br>
+                            <strong>Gemeldet am:</strong> ${report.timestamp}<br>
+                            <strong>Grund:</strong> ${report.reason}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            displayDiv.innerHTML = html;
+        }
+
+        function clearAllData() {
+            localStorage.removeItem('mockFirestoreData');
+            localStorage.removeItem('currentYear');
+            document.getElementById('reportsDisplay').innerHTML = '';
+            log('🗑️ Alle Daten gelöscht');
+        }
+
+        function showRawData() {
+            const data = localStorage.getItem('mockFirestoreData');
+            if (data) {
+                log('📄 Raw mockFirestoreData:');
+                log(JSON.stringify(JSON.parse(data), null, 2));
+            } else {
+                log('📭 Keine mockFirestoreData gefunden');
+            }
+        }
+
+        // Initial load
+        log('🚀 Direct Debug Tool gestartet');
+        log('💡 Klicken Sie auf "Jahr setzen + Reports erstellen" und dann "Reports laden"');
+    </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Report für AdminPanel hinzufügen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        .success {
+            background: #4caf50;
+        }
+        .success:hover {
+            background: #45a049;
+        }
+        .warning {
+            background: #ff9800;
+        }
+        .warning:hover {
+            background: #f57c00;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .link {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin: 10px 0;
+        }
+        .link:hover {
+            background: #bbdefb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ AdminPanel Test Report Generator</h1>
+        <p>Dieses Tool fügt Test-Reports zur Mock-Firestore-Datenbank hinzu, damit das AdminPanel Moderation-Feature getestet werden kann.</p>
+        
+        <div>
+            <button onclick="addTestReport()">📝 Test Report hinzufügen</button>
+            <button onclick="addMultipleReports()" class="success">📝📝 Mehrere Test Reports hinzufügen</button>
+            <button onclick="checkReports()">🔍 Aktuelle Reports prüfen</button>
+            <button onclick="clearAllReports()" class="warning">🗑️ Alle Reports löschen</button>
+        </div>
+        
+        <div id="output" class="output"></div>
+        
+        <a href="http://localhost:3000/admin-panel" class="link" target="_blank">
+            🔗 AdminPanel öffnen (Moderation)
+        </a>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString('de-DE');
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function addTestReport() {
+            try {
+                log('🚀 Füge Test Report hinzu...');
+                
+                // Get current year from localStorage (same as AdminPanel)
+                const storedYear = localStorage.getItem('currentYear');
+                const currentYear = storedYear || '27'; // Default to '27' if not set
+                log(`📅 Aktuelles Jahr: ${currentYear}`);
+                
+                // Get existing data from localStorage
+                const existingData = localStorage.getItem('mockFirestoreData');
+                let mockData;
+                
+                if (existingData) {
+                    mockData = JSON.parse(existingData);
+                    log('📥 Bestehende Daten aus localStorage geladen');
+                } else {
+                    mockData = { years: {} };
+                    log('🆕 Neue Datenstruktur erstellt');
+                }
+                
+                // Ensure year structure exists
+                if (!mockData.years) {
+                    mockData.years = {};
+                }
+                
+                if (!mockData.years[currentYear]) {
+                    mockData.years[currentYear] = {
+                        committees: [],
+                        projects: [],
+                        users: [],
+                        conversations: [],
+                        reports: [],
+                        'vorabi-subjects': [],
+                        transactions: []
+                    };
+                    log(`📁 Jahresstruktur für ${currentYear} erstellt`);
+                }
+                
+                // Create test report
+                const reportId = 'test-report-' + Date.now();
+                const testReport = {
+                    id: reportId,
+                    commentText: 'Das ist eine unangemessene Nachricht, die gemeldet werden sollte. Sie enthält beleidigenden Inhalt.',
+                    reason: 'Unangemessener Inhalt',
+                    reportedBy: 'test-user-123',
+                    reportedByName: 'Max Mustermann',
+                    authorId: 'author-456',
+                    authorName: 'Anna Schmidt',
+                    reportedAt: {
+                        seconds: Math.floor(Date.now() / 1000),
+                        nanoseconds: 0,
+                        toDate: function() { return new Date(this.seconds * 1000); }
+                    },
+                    conversationId: 'test-conversation-789',
+                    commentId: 'test-comment-101112'
+                };
+                
+                // Add test report to the reports array
+                mockData.years[currentYear].reports.push(testReport);
+                
+                // Save back to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                log('✅ Test Report erfolgreich hinzugefügt!');
+                log(`📊 Report ID: ${reportId}`);
+                log(`📝 Inhalt: "${testReport.commentText}"`);
+                log(`👤 Gemeldet von: ${testReport.reportedByName}`);
+                log(`🎯 Grund: ${testReport.reason}`);
+                log(`📁 Gesamt Reports in Datenbank: ${mockData.years[currentYear].reports.length}`);
+                
+                return testReport;
+                
+            } catch (error) {
+                log(`❌ Fehler beim Hinzufügen des Test Reports: ${error.message}`);
+                return null;
+            }
+        }
+
+        function addMultipleReports() {
+            const reports = [
+                {
+                    commentText: 'Das ist Spam! Bitte ignorieren Sie diese Nachricht.',
+                    reason: 'Spam',
+                    reportedByName: 'Lisa Weber',
+                    authorName: 'Tom Müller'
+                },
+                {
+                    commentText: 'Sehr beleidigender Kommentar über andere Schüler.',
+                    reason: 'Beleidigung',
+                    reportedByName: 'Sarah Klein',
+                    authorName: 'Mike Johnson'
+                },
+                {
+                    commentText: 'Unpassende Inhalte für eine Schulplattform.',
+                    reason: 'Unangemessener Inhalt',
+                    reportedByName: 'David Schmidt',
+                    authorName: 'Emma Brown'
+                }
+            ];
+
+            log('🚀 Füge mehrere Test Reports hinzu...');
+            
+            reports.forEach((reportData, index) => {
+                try {
+                    // Get current year from localStorage (same as AdminPanel)
+                    const storedYear = localStorage.getItem('currentYear');
+                    const currentYear = storedYear || '27'; // Default to '27' if not set
+                    const existingData = localStorage.getItem('mockFirestoreData');
+                    let mockData = existingData ? JSON.parse(existingData) : { years: {} };
+                    
+                    if (!mockData.years[currentYear]) {
+                        mockData.years[currentYear] = {
+                            committees: [], projects: [], users: [], conversations: [],
+                            reports: [], 'vorabi-subjects': [], transactions: []
+                        };
+                    }
+                    
+                    const reportId = `test-report-multi-${Date.now()}-${index}`;
+                    const testReport = {
+                        id: reportId,
+                        commentText: reportData.commentText,
+                        reason: reportData.reason,
+                        reportedBy: `test-user-${index + 200}`,
+                        reportedByName: reportData.reportedByName,
+                        authorId: `author-${index + 500}`,
+                        authorName: reportData.authorName,
+                        reportedAt: {
+                            seconds: Math.floor(Date.now() / 1000) - (index * 3600), // Different times
+                            nanoseconds: 0,
+                            toDate: function() { return new Date(this.seconds * 1000); }
+                        },
+                        conversationId: `test-conversation-${index + 800}`,
+                        commentId: `test-comment-${index + 200}`
+                    };
+                    
+                    mockData.years[currentYear].reports.push(testReport);
+                    localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                    
+                    log(`✅ Report ${index + 1}: "${reportData.commentText.substring(0, 50)}..." hinzugefügt`);
+                    
+                } catch (error) {
+                    log(`❌ Fehler bei Report ${index + 1}: ${error.message}`);
+                }
+            });
+            
+            log(`🎉 ${reports.length} Test Reports erfolgreich hinzugefügt!`);
+        }
+
+        function checkReports() {
+            try {
+                log('🔍 Prüfe aktuelle Reports...');
+                
+                const currentYear = new Date().getFullYear();
+                const existingData = localStorage.getItem('mockFirestoreData');
+                
+                if (!existingData) {
+                    log('❌ Keine Daten in localStorage gefunden');
+                    return;
+                }
+                
+                const mockData = JSON.parse(existingData);
+                const reports = mockData.years?.[currentYear]?.reports || [];
+                
+                log(`📊 ${reports.length} Reports für Jahr ${currentYear} gefunden:`);
+                
+                if (reports.length === 0) {
+                    log('📭 Keine Reports vorhanden');
+                } else {
+                    reports.forEach((report, index) => {
+                        const timestamp = report.reportedAt?.toDate ? 
+                            report.reportedAt.toDate().toLocaleString('de-DE') : 
+                            'Unbekannt';
+                        log(`${index + 1}. "${report.commentText}" (${report.reason}) - von ${report.reportedByName} am ${timestamp}`);
+                    });
+                }
+                
+                log('🗄️ localStorage Struktur:');
+                log(`Jahre verfügbar: ${Object.keys(mockData.years || {}).join(', ')}`);
+                
+            } catch (error) {
+                log(`❌ Fehler beim Prüfen der Reports: ${error.message}`);
+            }
+        }
+
+        function clearAllReports() {
+            try {
+                log('🗑️ Lösche alle Reports...');
+                
+                const currentYear = new Date().getFullYear();
+                const existingData = localStorage.getItem('mockFirestoreData');
+                
+                if (!existingData) {
+                    log('❌ Keine Daten in localStorage gefunden');
+                    return;
+                }
+                
+                const mockData = JSON.parse(existingData);
+                
+                if (mockData.years && mockData.years[currentYear]) {
+                    const oldCount = mockData.years[currentYear].reports?.length || 0;
+                    mockData.years[currentYear].reports = [];
+                    localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                    log(`✅ ${oldCount} Reports gelöscht`);
+                } else {
+                    log('📭 Keine Reports zum Löschen gefunden');
+                }
+                
+            } catch (error) {
+                log(`❌ Fehler beim Löschen der Reports: ${error.message}`);
+            }
+        }
+
+        // Initial check
+        window.onload = function() {
+            log('🔧 AdminPanel Test Report Generator geladen');
+            log('📋 Verfügbare Aktionen:');
+            log('  • Test Report hinzufügen: Fügt einen einzelnen Test-Report hinzu');
+            log('  • Mehrere Test Reports hinzufügen: Fügt 3 verschiedene Test-Reports hinzu');
+            log('  • Aktuelle Reports prüfen: Zeigt alle vorhandenen Reports an');
+            log('  • Alle Reports löschen: Entfernt alle Test-Reports');
+            log('');
+            checkReports();
+        };
+    </script>
+</body>
+</html>

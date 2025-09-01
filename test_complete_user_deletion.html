@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Vollständige Benutzerentfernung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #1565c0;
+        }
+        .button.danger {
+            background-color: #d32f2f;
+        }
+        .button.danger:hover {
+            background-color: #c62828;
+        }
+        .button.success {
+            background-color: #388e3c;
+        }
+        .button.success:hover {
+            background-color: #2e7d32;
+        }
+        .data {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .user-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f9f9f9;
+        }
+        .chat-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #e3f2fd;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #388e3c;
+            background-color: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #f57c00;
+            background-color: #fff3e0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗑️ Test: Vollständige Benutzerentfernung</h1>
+    
+    <div class="container">
+        <h2>1. Test-Setup</h2>
+        <button class="button" onclick="createTestUsers()">Test-Benutzer erstellen</button>
+        <button class="button" onclick="createTestChats()">Test-Gruppenchats erstellen</button>
+        <button class="button success" onclick="showCurrentData()">Aktuelle Daten anzeigen</button>
+        <button class="button danger" onclick="clearAllData()">Alle Daten löschen</button>
+    </div>
+    
+    <div class="container">
+        <h2>2. Benutzer löschen</h2>
+        <div id="users-list"></div>
+        <button class="button" onclick="loadUsers()">Benutzer laden</button>
+    </div>
+    
+    <div class="container">
+        <h2>3. Chat-Teilnehmer überprüfen</h2>
+        <div id="chats-list"></div>
+        <button class="button" onclick="loadChats()">Chats laden</button>
+    </div>
+    
+    <div class="container">
+        <h2>4. Daten-Inspektor</h2>
+        <button class="button" onclick="showMockFirestoreData()">MockFirestore Daten</button>
+        <button class="button" onclick="showCreatedUsers()">Erstellte Benutzer</button>
+        <button class="button" onclick="showDemoPasswords()">Demo Passwörter</button>
+        <div id="data-display"></div>
+    </div>
+    
+    <div class="container">
+        <h2>5. App öffnen</h2>
+        <button class="button success" onclick="openApp()">App öffnen</button>
+        <div class="warning">
+            <strong>Test-Anleitung:</strong><br>
+            1. Test-Benutzer und Gruppenchats erstellen<br>
+            2. Einen Benutzer über das AdminPanel löschen<br>
+            3. Chat-Teilnehmer überprüfen - der gelöschte Benutzer sollte nicht mehr in den participants Arrays stehen<br>
+            4. In der App prüfen, ob der Benutzer vollständig verschwunden ist
+        </div>
+    </div>
+
+    <script>
+        // Hilfsfunktionen
+        function generateId() {
+            return 'test_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function getCurrentYear() {
+            return new Date().getFullYear().toString().slice(-2);
+        }
+        
+        function getMockFirestoreData() {
+            const data = localStorage.getItem('mockFirestoreData');
+            return data ? JSON.parse(data) : { years: {} };
+        }
+        
+        function saveMockFirestoreData(data) {
+            localStorage.setItem('mockFirestoreData', JSON.stringify(data));
+        }
+        
+        // Test-Benutzer erstellen
+        function createTestUsers() {
+            const users = [
+                {
+                    uid: 'test_user_1',
+                    firstName: 'Max',
+                    lastName: 'Mustermann',
+                    email: 'max.mustermann@test.de',
+                    role: 'student',
+                    displayName: 'Max Mustermann',
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    uid: 'test_user_2',
+                    firstName: 'Anna',
+                    lastName: 'Schmidt',
+                    email: 'anna.schmidt@test.de',
+                    role: 'student',
+                    displayName: 'Anna Schmidt',
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    uid: 'test_user_3',
+                    firstName: 'Tom',
+                    lastName: 'Weber',
+                    email: 'tom.weber@test.de',
+                    role: 'teacher',
+                    displayName: 'Tom Weber',
+                    createdAt: new Date().toISOString()
+                }
+            ];
+            
+            // In localStorage.createdUsers speichern
+            localStorage.setItem('createdUsers', JSON.stringify(users));
+            
+            // In MockFirestore speichern
+            const mockData = getMockFirestoreData();
+            const currentYear = getCurrentYear();
+            
+            if (!mockData.years[currentYear]) {
+                mockData.years[currentYear] = {};
+            }
+            
+            if (!mockData.years[currentYear].users) {
+                mockData.years[currentYear].users = [];
+            }
+            
+            // Benutzer zu MockFirestore hinzufügen
+            users.forEach(user => {
+                const existingIndex = mockData.years[currentYear].users.findIndex(u => u.id === user.uid);
+                if (existingIndex === -1) {
+                    mockData.years[currentYear].users.push({
+                        id: user.uid,
+                        ...user
+                    });
+                }
+            });
+            
+            saveMockFirestoreData(mockData);
+            
+            // Demo-Passwörter erstellen
+            const demoPasswords = {
+                'max.mustermann@test.de': 'test123',
+                'anna.schmidt@test.de': 'test123',
+                'tom.weber@test.de': 'test123'
+            };
+            localStorage.setItem('demoPasswords', JSON.stringify(demoPasswords));
+            
+            document.getElementById('data-display').innerHTML = '<div class="success">✅ Test-Benutzer erstellt!</div>';
+            loadUsers();
+        }
+        
+        // Test-Gruppenchats erstellen
+        function createTestChats() {
+            const chats = [
+                {
+                    id: 'test_group_1',
+                    type: 'group',
+                    name: 'Klasse 12A',
+                    description: 'Klassenchat für 12A',
+                    participants: ['test_user_1', 'test_user_2', 'test_user_3'],
+                    admins: ['test_user_3'],
+                    createdAt: new Date().toISOString(),
+                    lastMessage: 'Willkommen im Klassenchat!',
+                    lastMessageAt: new Date().toISOString()
+                },
+                {
+                    id: 'test_group_2',
+                    type: 'group',
+                    name: 'Projektgruppe',
+                    description: 'Gruppe für das Abschlussprojekt',
+                    participants: ['test_user_1', 'test_user_2'],
+                    admins: ['test_user_1'],
+                    createdAt: new Date().toISOString(),
+                    lastMessage: 'Lasst uns das Projekt planen',
+                    lastMessageAt: new Date().toISOString()
+                },
+                {
+                    id: 'test_private_1',
+                    type: 'private',
+                    participants: ['test_user_1', 'test_user_3'],
+                    createdAt: new Date().toISOString(),
+                    lastMessage: 'Hallo!',
+                    lastMessageAt: new Date().toISOString()
+                }
+            ];
+            
+            const mockData = getMockFirestoreData();
+            const currentYear = getCurrentYear();
+            
+            if (!mockData.years[currentYear]) {
+                mockData.years[currentYear] = {};
+            }
+            
+            if (!mockData.years[currentYear].conversations) {
+                mockData.years[currentYear].conversations = [];
+            }
+            
+            // Chats hinzufügen
+            chats.forEach(chat => {
+                const existingIndex = mockData.years[currentYear].conversations.findIndex(c => c.id === chat.id);
+                if (existingIndex === -1) {
+                    mockData.years[currentYear].conversations.push(chat);
+                }
+            });
+            
+            saveMockFirestoreData(mockData);
+            
+            document.getElementById('data-display').innerHTML = '<div class="success">✅ Test-Gruppenchats erstellt!</div>';
+            loadChats();
+        }
+        
+        // Benutzer laden und anzeigen
+        function loadUsers() {
+            const createdUsers = JSON.parse(localStorage.getItem('createdUsers') || '[]');
+            const mockData = getMockFirestoreData();
+            const currentYear = getCurrentYear();
+            
+            let html = '<h3>Benutzer in localStorage.createdUsers:</h3>';
+            
+            if (createdUsers.length === 0) {
+                html += '<div class="warning">Keine Benutzer in localStorage.createdUsers gefunden</div>';
+            } else {
+                createdUsers.forEach(user => {
+                    html += `
+                        <div class="user-card">
+                            <strong>${user.firstName} ${user.lastName}</strong> (${user.email})<br>
+                            ID: ${user.uid} | Rolle: ${user.role}<br>
+                            <button class="button danger" onclick="deleteUser('${user.uid}', '${user.firstName}', '${user.lastName}')">Benutzer löschen</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += '<h3>Benutzer in MockFirestore:</h3>';
+            
+            if (mockData.years[currentYear] && mockData.years[currentYear].users) {
+                const mockUsers = mockData.years[currentYear].users;
+                if (mockUsers.length === 0) {
+                    html += '<div class="warning">Keine Benutzer in MockFirestore gefunden</div>';
+                } else {
+                    mockUsers.forEach(user => {
+                        html += `
+                            <div class="user-card">
+                                <strong>${user.firstName} ${user.lastName}</strong> (${user.email})<br>
+                                ID: ${user.id} | Rolle: ${user.role}
+                            </div>
+                        `;
+                    });
+                }
+            } else {
+                html += '<div class="warning">Keine MockFirestore-Daten für Jahr ' + currentYear + ' gefunden</div>';
+            }
+            
+            document.getElementById('users-list').innerHTML = html;
+        }
+        
+        // Chats laden und anzeigen
+        function loadChats() {
+            const mockData = getMockFirestoreData();
+            const currentYear = getCurrentYear();
+            
+            let html = '<h3>Chats in MockFirestore:</h3>';
+            
+            if (mockData.years[currentYear] && mockData.years[currentYear].conversations) {
+                const conversations = mockData.years[currentYear].conversations;
+                if (conversations.length === 0) {
+                    html += '<div class="warning">Keine Chats gefunden</div>';
+                } else {
+                    conversations.forEach(chat => {
+                        html += `
+                            <div class="chat-card">
+                                <strong>${chat.name || 'Private Chat'}</strong> (${chat.type})<br>
+                                ID: ${chat.id}<br>
+                                Teilnehmer: ${chat.participants ? chat.participants.join(', ') : 'Keine'}<br>
+                                ${chat.description ? 'Beschreibung: ' + chat.description + '<br>' : ''}
+                                Letzte Nachricht: ${chat.lastMessage || 'Keine'}
+                            </div>
+                        `;
+                    });
+                }
+            } else {
+                html += '<div class="warning">Keine Chat-Daten für Jahr ' + currentYear + ' gefunden</div>';
+            }
+            
+            document.getElementById('chats-list').innerHTML = html;
+        }
+        
+        // Benutzer löschen (simuliert AdminPanel-Löschung)
+        function deleteUser(userId, firstName, lastName) {
+            if (!confirm(`Benutzer ${firstName} ${lastName} wirklich löschen?`)) {
+                return;
+            }
+            
+            console.log('🗑️ DELETE: Starting deletion for user:', userId);
+            
+            try {
+                // 1. Aus localStorage.createdUsers entfernen
+                const createdUsers = JSON.parse(localStorage.getItem('createdUsers') || '[]');
+                const filteredUsers = createdUsers.filter(u => u.uid !== userId && u.id !== userId);
+                localStorage.setItem('createdUsers', JSON.stringify(filteredUsers));
+                console.log('✅ DELETE: Cleaned localStorage.createdUsers');
+                
+                // 2. Aus MockFirestore entfernen
+                const mockData = getMockFirestoreData();
+                const currentYear = getCurrentYear();
+                
+                if (mockData.years[currentYear]) {
+                    // Benutzer aus users entfernen
+                    if (mockData.years[currentYear].users) {
+                        mockData.years[currentYear].users = mockData.years[currentYear].users.filter(
+                            u => u.id !== userId && u.uid !== userId
+                        );
+                    }
+                    
+                    // Benutzer aus allen Chat-Teilnehmerlisten entfernen
+                    if (mockData.years[currentYear].conversations) {
+                        mockData.years[currentYear].conversations = mockData.years[currentYear].conversations.map(conversation => {
+                            if (conversation.participants && conversation.participants.includes(userId)) {
+                                return {
+                                    ...conversation,
+                                    participants: conversation.participants.filter(id => id !== userId),
+                                    updatedAt: new Date().toISOString()
+                                };
+                            }
+                            return conversation;
+                        });
+                    }
+                    
+                    // Nachrichten des Benutzers entfernen
+                    Object.keys(mockData.years[currentYear]).forEach(key => {
+                        if (key.startsWith('conversations/') && key.includes('/messages')) {
+                            if (Array.isArray(mockData.years[currentYear][key])) {
+                                mockData.years[currentYear][key] = mockData.years[currentYear][key].filter(
+                                    message => message.senderId !== userId
+                                );
+                            }
+                        }
+                    });
+                }
+                
+                saveMockFirestoreData(mockData);
+                console.log('✅ DELETE: Cleaned MockFirestore data');
+                
+                // 3. Demo-Passwort entfernen
+                const demoPasswords = JSON.parse(localStorage.getItem('demoPasswords') || '{}');
+                const userEmail = createdUsers.find(u => u.uid === userId)?.email;
+                if (userEmail) {
+                    delete demoPasswords[userEmail];
+                    localStorage.setItem('demoPasswords', JSON.stringify(demoPasswords));
+                    console.log('✅ DELETE: Cleaned demo passwords');
+                }
+                
+                document.getElementById('data-display').innerHTML = `<div class="success">✅ Benutzer ${firstName} ${lastName} vollständig gelöscht!</div>`;
+                
+                // Listen aktualisieren
+                loadUsers();
+                loadChats();
+                
+            } catch (error) {
+                console.error('❌ DELETE: Error:', error);
+                document.getElementById('data-display').innerHTML = `<div class="error">❌ Fehler beim Löschen: ${error.message}</div>`;
+            }
+        }
+        
+        // Daten anzeigen
+        function showCurrentData() {
+            loadUsers();
+            loadChats();
+            document.getElementById('data-display').innerHTML = '<div class="success">✅ Daten aktualisiert!</div>';
+        }
+        
+        function showMockFirestoreData() {
+            const data = getMockFirestoreData();
+            document.getElementById('data-display').innerHTML = 
+                '<h3>MockFirestore Daten:</h3><div class="data">' + JSON.stringify(data, null, 2) + '</div>';
+        }
+        
+        function showCreatedUsers() {
+            const data = JSON.parse(localStorage.getItem('createdUsers') || '[]');
+            document.getElementById('data-display').innerHTML = 
+                '<h3>Erstellte Benutzer:</h3><div class="data">' + JSON.stringify(data, null, 2) + '</div>';
+        }
+        
+        function showDemoPasswords() {
+            const data = JSON.parse(localStorage.getItem('demoPasswords') || '{}');
+            document.getElementById('data-display').innerHTML = 
+                '<h3>Demo Passwörter:</h3><div class="data">' + JSON.stringify(data, null, 2) + '</div>';
+        }
+        
+        function clearAllData() {
+            if (!confirm('Wirklich alle Test-Daten löschen?')) {
+                return;
+            }
+            
+            localStorage.removeItem('createdUsers');
+            localStorage.removeItem('demoPasswords');
+            
+            const mockData = getMockFirestoreData();
+            const currentYear = getCurrentYear();
+            
+            if (mockData.years[currentYear]) {
+                delete mockData.years[currentYear].users;
+                delete mockData.years[currentYear].conversations;
+                
+                // Auch Message-Collections löschen
+                Object.keys(mockData.years[currentYear]).forEach(key => {
+                    if (key.startsWith('conversations/')) {
+                        delete mockData.years[currentYear][key];
+                    }
+                });
+            }
+            
+            saveMockFirestoreData(mockData);
+            
+            document.getElementById('data-display').innerHTML = '<div class="success">✅ Alle Test-Daten gelöscht!</div>';
+            document.getElementById('users-list').innerHTML = '';
+            document.getElementById('chats-list').innerHTML = '';
+        }
+        
+        function openApp() {
+            window.open('/', '_blank');
+        }
+        
+        // Initial laden
+        window.onload = function() {
+            showCurrentData();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test@test.de Account löschen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #1565c0;
+        }
+        .button.danger {
+            background-color: #d32f2f;
+        }
+        .button.danger:hover {
+            background-color: #c62828;
+        }
+        .data {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #388e3c;
+            background-color: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #f57c00;
+            background-color: #fff3e0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗑️ Test@test.de Account löschen</h1>
+    
+    <div class="container">
+        <h2>1. Account suchen</h2>
+        <button class="button" onclick="searchForTestAccount()">Nach test@test.de suchen</button>
+        <button class="button danger" onclick="deleteTestAccount()">test@test.de Account löschen</button>
+        <div id="search-results"></div>
+    </div>
+    
+    <div class="container">
+        <h2>2. localStorage überprüfen</h2>
+        <button class="button" onclick="showCreatedUsers()">createdUsers anzeigen</button>
+        <button class="button" onclick="showDemoPasswords()">demoPasswords anzeigen</button>
+        <button class="button" onclick="showMockFirestore()">mockFirestoreData anzeigen</button>
+        <div id="storage-display"></div>
+    </div>
+    
+    <div class="container">
+        <h2>3. Alle localStorage Schlüssel</h2>
+        <button class="button" onclick="showAllKeys()">Alle Schlüssel anzeigen</button>
+        <div id="all-keys"></div>
+    </div>
+
+    <script>
+        function searchForTestAccount() {
+            let results = [];
+            let found = false;
+            
+            try {
+                // 1. Check createdUsers
+                const createdUsers = JSON.parse(localStorage.getItem('createdUsers') || '[]');
+                const testUserInCreated = createdUsers.find(user => user.email === 'test@test.de');
+                if (testUserInCreated) {
+                    results.push('✅ Gefunden in localStorage.createdUsers:');
+                    results.push(JSON.stringify(testUserInCreated, null, 2));
+                    found = true;
+                }
+                
+                // 2. Check demoPasswords
+                const demoPasswords = JSON.parse(localStorage.getItem('demoPasswords') || '{}');
+                if (demoPasswords['test@test.de']) {
+                    results.push('✅ Gefunden in localStorage.demoPasswords:');
+                    results.push(`test@test.de: ${demoPasswords['test@test.de']}`);
+                    found = true;
+                }
+                
+                // 3. Check mockFirestoreData
+                const mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                if (mockData.years) {
+                    Object.keys(mockData.years).forEach(year => {
+                        if (mockData.years[year].users) {
+                            const testUserInMock = mockData.years[year].users.find(user => 
+                                user.email === 'test@test.de' || user.uid === 'test@test.de'
+                            );
+                            if (testUserInMock) {
+                                results.push(`✅ Gefunden in mockFirestoreData Jahr ${year}:`);
+                                results.push(JSON.stringify(testUserInMock, null, 2));
+                                found = true;
+                            }
+                        }
+                    });
+                }
+                
+                // 4. Check all localStorage keys for test@test.de
+                Object.keys(localStorage).forEach(key => {
+                    try {
+                        const value = localStorage.getItem(key);
+                        if (value && value.includes('test@test.de')) {
+                            results.push(`✅ Gefunden in localStorage.${key}:`);
+                            results.push(value.substring(0, 200) + (value.length > 200 ? '...' : ''));
+                            found = true;
+                        }
+                    } catch (e) {
+                        // Ignore parsing errors
+                    }
+                });
+                
+                if (!found) {
+                    results.push('❌ test@test.de Account nicht in localStorage gefunden');
+                }
+                
+            } catch (error) {
+                results.push(`❌ Fehler bei der Suche: ${error.message}`);
+            }
+            
+            document.getElementById('search-results').innerHTML = 
+                '<div class="data">' + results.join('\n\n') + '</div>';
+        }
+        
+        function deleteTestAccount() {
+            let deletions = [];
+            let deleted = false;
+            
+            try {
+                // 1. Remove from createdUsers
+                const createdUsers = JSON.parse(localStorage.getItem('createdUsers') || '[]');
+                const filteredUsers = createdUsers.filter(user => user.email !== 'test@test.de');
+                if (filteredUsers.length !== createdUsers.length) {
+                    localStorage.setItem('createdUsers', JSON.stringify(filteredUsers));
+                    deletions.push('✅ Aus localStorage.createdUsers entfernt');
+                    deleted = true;
+                }
+                
+                // 2. Remove from demoPasswords
+                const demoPasswords = JSON.parse(localStorage.getItem('demoPasswords') || '{}');
+                if (demoPasswords['test@test.de']) {
+                    delete demoPasswords['test@test.de'];
+                    localStorage.setItem('demoPasswords', JSON.stringify(demoPasswords));
+                    deletions.push('✅ Aus localStorage.demoPasswords entfernt');
+                    deleted = true;
+                }
+                
+                // 3. Remove from mockFirestoreData
+                const mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                if (mockData.years) {
+                    Object.keys(mockData.years).forEach(year => {
+                        if (mockData.years[year].users) {
+                            const originalLength = mockData.years[year].users.length;
+                            mockData.years[year].users = mockData.years[year].users.filter(user => 
+                                user.email !== 'test@test.de' && user.uid !== 'test@test.de'
+                            );
+                            if (mockData.years[year].users.length !== originalLength) {
+                                deletions.push(`✅ Aus mockFirestoreData Jahr ${year} entfernt`);
+                                deleted = true;
+                            }
+                        }
+                    });
+                    localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                }
+                
+                // 4. Remove from any other localStorage keys
+                Object.keys(localStorage).forEach(key => {
+                    try {
+                        const value = localStorage.getItem(key);
+                        if (value && value.includes('test@test.de')) {
+                            // Try to parse and clean JSON data
+                            try {
+                                const parsed = JSON.parse(value);
+                                if (Array.isArray(parsed)) {
+                                    const filtered = parsed.filter(item => 
+                                        !(item.email === 'test@test.de' || item.uid === 'test@test.de')
+                                    );
+                                    if (filtered.length !== parsed.length) {
+                                        localStorage.setItem(key, JSON.stringify(filtered));
+                                        deletions.push(`✅ Aus localStorage.${key} entfernt`);
+                                        deleted = true;
+                                    }
+                                } else if (typeof parsed === 'object' && parsed !== null) {
+                                    if (parsed['test@test.de']) {
+                                        delete parsed['test@test.de'];
+                                        localStorage.setItem(key, JSON.stringify(parsed));
+                                        deletions.push(`✅ Aus localStorage.${key} entfernt`);
+                                        deleted = true;
+                                    }
+                                }
+                            } catch (e) {
+                                // If it's not JSON, check if it's just the email string
+                                if (value === 'test@test.de') {
+                                    localStorage.removeItem(key);
+                                    deletions.push(`✅ localStorage.${key} komplett entfernt`);
+                                    deleted = true;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                });
+                
+                if (!deleted) {
+                    deletions.push('❌ test@test.de Account nicht gefunden - nichts zu löschen');
+                } else {
+                    deletions.push('\n🎉 test@test.de Account vollständig gelöscht!');
+                }
+                
+            } catch (error) {
+                deletions.push(`❌ Fehler beim Löschen: ${error.message}`);
+            }
+            
+            document.getElementById('search-results').innerHTML = 
+                '<div class="' + (deleted ? 'success' : 'warning') + '">' + deletions.join('\n') + '</div>';
+        }
+        
+        function showCreatedUsers() {
+            const data = JSON.parse(localStorage.getItem('createdUsers') || '[]');
+            document.getElementById('storage-display').innerHTML = 
+                '<h3>localStorage.createdUsers:</h3><div class="data">' + JSON.stringify(data, null, 2) + '</div>';
+        }
+        
+        function showDemoPasswords() {
+            const data = JSON.parse(localStorage.getItem('demoPasswords') || '{}');
+            document.getElementById('storage-display').innerHTML = 
+                '<h3>localStorage.demoPasswords:</h3><div class="data">' + JSON.stringify(data, null, 2) + '</div>';
+        }
+        
+        function showMockFirestore() {
+            const data = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+            document.getElementById('storage-display').innerHTML = 
+                '<h3>localStorage.mockFirestoreData:</h3><div class="data">' + JSON.stringify(data, null, 2) + '</div>';
+        }
+        
+        function showAllKeys() {
+            const keys = Object.keys(localStorage);
+            let output = 'Alle localStorage Schlüssel:\n\n';
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                const preview = value ? value.substring(0, 100) + (value.length > 100 ? '...' : '') : '';
+                output += `${key}: ${preview}\n\n`;
+            });
+            
+            document.getElementById('all-keys').innerHTML = 
+                '<div class="data">' + output + '</div>';
+        }
+        
+        // Auto-search on page load
+        window.onload = function() {
+            searchForTestAccount();
+        };
+    </script>
+</body>
+</html>

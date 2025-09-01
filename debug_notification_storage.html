@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Notification Storage</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .notification { background: #f5f5f5; margin: 10px 0; padding: 10px; }
+        button { padding: 10px 15px; margin: 5px; }
+        pre { background: #f0f0f0; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Notification Storage</h1>
+    
+    <div class="section">
+        <h2>Actions</h2>
+        <button onclick="createTestNotification()">Create Test Notification</button>
+        <button onclick="checkStorage()">Check localStorage</button>
+        <button onclick="clearStorage()">Clear All Data</button>
+        <button onclick="openApp()">Open App</button>
+    </div>
+    
+    <div class="section">
+        <h2>Status</h2>
+        <div id="status"></div>
+    </div>
+    
+    <div class="section">
+        <h2>localStorage Content</h2>
+        <pre id="storage-content"></pre>
+    </div>
+    
+    <div class="section">
+        <h2>Notifications for demo-user</h2>
+        <div id="notifications"></div>
+    </div>
+
+    <script>
+        function createTestNotification() {
+            try {
+                const currentYear = new Date().getFullYear();
+                let mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                // Initialize structure
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) mockData.years[currentYear] = {};
+                if (!mockData.years[currentYear].notifications) mockData.years[currentYear].notifications = [];
+                
+                const testNotification = {
+                    id: 'debug-test-' + Date.now(),
+                    userId: 'admin-test-uid', // Use admin test UID for demo mode
+                    type: 'warning',
+                    title: 'Debug Test Verwarnung',
+                    body: 'Dies ist eine Test-Verwarnung für Debug-Zwecke.',
+                    priority: 'high',
+                    createdAt: new Date().toISOString(),
+                    read: false,
+                    reportId: 'debug-report-' + Date.now(),
+                    reason: 'Debug Test',
+                    messageContent: 'Debug Test Nachricht'
+                };
+                
+                // Also create one for demo-user for backward compatibility
+                const testNotification2 = {
+                    id: 'debug-test-demo-' + Date.now(),
+                    userId: 'demo-user',
+                    type: 'warning',
+                    title: 'Demo User Verwarnung',
+                    body: 'Dies ist eine Test-Verwarnung für demo-user.',
+                    priority: 'high',
+                    createdAt: new Date().toISOString(),
+                    read: false,
+                    reportId: 'debug-report-demo-' + Date.now(),
+                    reason: 'Demo Test',
+                    messageContent: 'Demo Test Nachricht'
+                };
+                
+                mockData.years[currentYear].notifications.push(testNotification);
+                mockData.years[currentYear].notifications.push(testNotification2);
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                document.getElementById('status').innerHTML = '<p style="color: green;">✅ Test notification created!</p>';
+                checkStorage();
+            } catch (error) {
+                document.getElementById('status').innerHTML = '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+        
+        function checkStorage() {
+            try {
+                const data = localStorage.getItem('mockFirestoreData');
+                document.getElementById('storage-content').textContent = data || 'No data found';
+                
+                if (data) {
+                    const mockData = JSON.parse(data);
+                    const currentYear = new Date().getFullYear();
+                    const notifications = mockData.years?.[currentYear]?.notifications || [];
+                    const userNotifications = notifications.filter(n => n.userId === 'demo-user');
+                    
+                    let html = '<p>Total notifications: ' + notifications.length + '</p>';
+                    html += '<p>Notifications for demo-user: ' + userNotifications.length + '</p>';
+                    
+                    userNotifications.forEach(notification => {
+                        html += '<div class="notification">';
+                        html += '<strong>' + notification.title + '</strong><br>';
+                        html += 'Type: ' + notification.type + '<br>';
+                        html += 'Read: ' + notification.read + '<br>';
+                        html += 'Created: ' + notification.createdAt + '<br>';
+                        html += 'ID: ' + notification.id;
+                        html += '</div>';
+                    });
+                    
+                    document.getElementById('notifications').innerHTML = html;
+                } else {
+                    document.getElementById('notifications').innerHTML = '<p>No notifications found</p>';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = '<p style="color: red;">❌ Error checking storage: ' + error.message + '</p>';
+            }
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('mockFirestoreData');
+            document.getElementById('status').innerHTML = '<p style="color: orange;">🗑️ Storage cleared</p>';
+            checkStorage();
+        }
+        
+        function openApp() {
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        // Check storage on page load
+        window.onload = function() {
+            checkStorage();
+        };
+    </script>
+</body>
+</html>

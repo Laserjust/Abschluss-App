@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Reload Demo Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .button { padding: 15px 25px; margin: 10px; background: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
+        .button:hover { background: #0056b3; }
+        .success { color: green; font-weight: bold; margin: 20px 0; }
+        .error { color: red; font-weight: bold; margin: 20px 0; }
+        .info { background: #f8f9fa; padding: 15px; margin: 20px 0; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Force Reload Demo Data</h1>
+    
+    <div class="info">
+        <strong>Anweisungen:</strong>
+        <ol>
+            <li>Klicke auf "Force Reload Demo Data"</li>
+            <li>Gehe zurück zur Anwendung (http://localhost:5173/)</li>
+            <li>Lade die Seite neu (F5 oder Ctrl+R)</li>
+            <li>Teste die Chat-Isolation zwischen verschiedenen Konversationen</li>
+        </ol>
+    </div>
+    
+    <button class="button" onclick="forceReloadDemoData()">Force Reload Demo Data</button>
+    <button class="button" onclick="clearLocalStorage()">Clear localStorage Only</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        function forceReloadDemoData() {
+            const result = document.getElementById('result');
+            try {
+                // Clear localStorage completely
+                localStorage.clear();
+                
+                // Get current year
+                const currentYear = new Date().getFullYear();
+                
+                // Create demo data with proper message isolation
+                const demoData = {
+                    years: {
+                        [currentYear]: {
+                            users: [
+                                {
+                                    id: 'admin-test-uid',
+                                    uid: 'admin-test-uid',
+                                    firstName: 'Max',
+                                    lastName: 'Mustermann',
+                                    email: `admin@rse-abschluss${currentYear}.de`,
+                                    displayName: 'Administrator',
+                                    role: 'admin',
+                                    committees: ['Abi-Komitee', 'Finanz-Komitee'],
+                                    committeeRoles: { 'Abi-Komitee': 'leader', 'Finanz-Komitee': 'member' },
+                                    demoPassword: 'admin123',
+                                    notificationSettings: {
+                                        pushNotifications: true,
+                                        soundEnabled: true,
+                                        emailNotifications: true
+                                    },
+                                    createdAt: new Date('2024-01-01').toISOString(),
+                                    isBlocked: false,
+                                    status: 'online',
+                                    lastSeen: new Date(),
+                                    isOnline: true
+                                },
+                                {
+                                    id: 'student-test-uid',
+                                    uid: 'student-test-uid',
+                                    firstName: 'Anna',
+                                    lastName: 'Müller',
+                                    email: `schueler@rse-abschluss${currentYear}.de`,
+                                    displayName: 'Anna Müller',
+                                    role: 'student',
+                                    committees: [],
+                                    committeeRoles: {},
+                                    demoPassword: 'schueler123',
+                                    notificationSettings: {
+                                        pushNotifications: true,
+                                        soundEnabled: true,
+                                        emailNotifications: true
+                                    },
+                                    createdAt: new Date('2024-01-01').toISOString(),
+                                    isBlocked: false,
+                                    status: 'offline',
+                                    lastSeen: new Date(Date.now() - 2 * 60 * 60 * 1000),
+                                    isOnline: false
+                                },
+                                {
+                                    id: 'student-2-uid',
+                                    uid: 'student-2-uid',
+                                    firstName: 'Lisa',
+                                    lastName: 'Weber',
+                                    email: `lisa.weber@rse-abschluss${currentYear}.de`,
+                                    displayName: 'Lisa Weber',
+                                    role: 'student',
+                                    committees: ['Jahrbuch-Komitee'],
+                                    committeeRoles: { 'Jahrbuch-Komitee': 'member' },
+                                    demoPassword: 'lisa123',
+                                    notificationSettings: {
+                                        pushNotifications: true,
+                                        soundEnabled: true,
+                                        emailNotifications: true
+                                    },
+                                    createdAt: new Date('2024-01-01').toISOString(),
+                                    isBlocked: false,
+                                    status: 'online',
+                                    lastSeen: new Date(),
+                                    isOnline: true
+                                }
+                            ],
+                            conversations: [
+                                {
+                                    id: 'test-conv-1',
+                                    name: 'Abi-Komitee Chat',
+                                    participants: ['admin-test-uid', 'student-test-uid', 'student-2-uid'],
+                                    type: 'group',
+                                    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                                    lastMessage: 'Hallo zusammen! Wie läuft die Vorbereitung für das Abitur?',
+                                    lastMessageTime: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
+                                },
+                                {
+                                    id: 'test-conv-2',
+                                    name: 'Anna & Lisa',
+                                    participants: ['student-test-uid', 'student-2-uid'],
+                                    type: 'direct',
+                                    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+                                    lastMessage: 'Hallo Anna! Wie geht es dir denn so?',
+                                    lastMessageTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+                                }
+                            ],
+                            // Separate message collections for each conversation
+                            'conversations/test-conv-1/messages': [
+                                {
+                                    id: 'msg-1-1',
+                                    text: 'Hallo zusammen! Wie läuft die Vorbereitung für das Abitur?',
+                                    senderId: 'admin-test-uid',
+                                    senderName: 'Max Mustermann',
+                                    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+                                    conversationId: 'test-conv-1',
+                                    type: 'text'
+                                },
+                                {
+                                    id: 'msg-1-2',
+                                    text: 'Bei mir läuft es ganz gut! Mathe ist noch etwas schwierig.',
+                                    senderId: 'student-test-uid',
+                                    senderName: 'Anna Müller',
+                                    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+                                    conversationId: 'test-conv-1',
+                                    type: 'text'
+                                }
+                            ],
+                            'conversations/test-conv-2/messages': [
+                                {
+                                    id: 'msg-2-1',
+                                    text: 'Hallo Anna! Wie geht es dir denn so?',
+                                    senderId: 'student-2-uid',
+                                    senderName: 'Lisa Weber',
+                                    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+                                    conversationId: 'test-conv-2',
+                                    type: 'text'
+                                },
+                                {
+                                    id: 'msg-2-2',
+                                    text: 'Hi Lisa! Mir geht es gut, danke! Bist du schon mit der Deutsch-Hausaufgabe fertig?',
+                                    senderId: 'student-test-uid',
+                                    senderName: 'Anna Müller',
+                                    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+                                    conversationId: 'test-conv-2',
+                                    type: 'text'
+                                }
+                            ],
+                            committees: [],
+                            projects: [],
+                            reports: [],
+                            transactions: [],
+                            'vorabi-subjects': [],
+                            settings: {}
+                        }
+                    }
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(demoData));
+                
+                result.innerHTML = '<div class="success">✅ Demo-Daten wurden erfolgreich neu geladen!<br><br>Gehe jetzt zur Anwendung zurück und lade die Seite neu (F5).</div>';
+                
+                console.log('Demo data force reloaded with proper message isolation');
+                console.log('Conversation 1 messages:', demoData.years[currentYear]['conversations/test-conv-1/messages']);
+                console.log('Conversation 2 messages:', demoData.years[currentYear]['conversations/test-conv-2/messages']);
+                
+            } catch (error) {
+                result.innerHTML = '<div class="error">❌ Fehler beim Neuladen der Demo-Daten: ' + error.message + '</div>';
+                console.error('Error force reloading demo data:', error);
+            }
+        }
+        
+        function clearLocalStorage() {
+            localStorage.clear();
+            document.getElementById('result').innerHTML = '<div class="success">✅ localStorage wurde geleert!</div>';
+        }
+    </script>
+</body>
+</html>

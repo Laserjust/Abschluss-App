@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug localStorage Structure</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056B3;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug localStorage Structure</h1>
+        
+        <div class="section">
+            <h3>Aktuelle localStorage Keys</h3>
+            <button class="button" onclick="showAllKeys()">Alle Keys anzeigen</button>
+            <pre id="allKeys"></pre>
+        </div>
+        
+        <div class="section">
+            <h3>Demo Data Structure</h3>
+            <button class="button" onclick="showDemoData()">Demo Data anzeigen</button>
+            <pre id="demoData"></pre>
+        </div>
+        
+        <div class="section">
+            <h3>Year 27 Data Structure</h3>
+            <button class="button" onclick="showYear27Data()">Year 27 Data anzeigen</button>
+            <pre id="year27Data"></pre>
+        </div>
+        
+        <div class="section">
+            <h3>Messages Collections</h3>
+            <button class="button" onclick="showMessagesCollections()">Messages Collections anzeigen</button>
+            <pre id="messagesCollections"></pre>
+        </div>
+        
+        <div class="section">
+            <h3>Conversations Data</h3>
+            <button class="button" onclick="showConversationsData()">Conversations anzeigen</button>
+            <pre id="conversationsData"></pre>
+        </div>
+        
+        <div class="section">
+            <h3>Debug Actions</h3>
+            <button class="button" onclick="clearAllData()">Alle localStorage Daten löschen</button>
+            <button class="button" onclick="reloadDemoData()">Demo Daten neu laden</button>
+        </div>
+    </div>
+
+    <script>
+        function showAllKeys() {
+            const keys = Object.keys(localStorage);
+            document.getElementById('allKeys').textContent = JSON.stringify(keys, null, 2);
+        }
+        
+        function showDemoData() {
+            const demoData = localStorage.getItem('demoData');
+            if (demoData) {
+                const parsed = JSON.parse(demoData);
+                document.getElementById('demoData').textContent = JSON.stringify(parsed, null, 2);
+            } else {
+                document.getElementById('demoData').textContent = 'Keine demoData gefunden';
+            }
+        }
+        
+        function showYear27Data() {
+            const year27Data = localStorage.getItem('year_27_data');
+            if (year27Data) {
+                const parsed = JSON.parse(year27Data);
+                document.getElementById('year27Data').textContent = JSON.stringify(parsed, null, 2);
+            } else {
+                document.getElementById('year27Data').textContent = 'Keine year_27_data gefunden';
+            }
+        }
+        
+        function showMessagesCollections() {
+            let output = '';
+            
+            // Check demoData for messages
+            const demoData = localStorage.getItem('demoData');
+            if (demoData) {
+                const parsed = JSON.parse(demoData);
+                output += '=== DEMO DATA MESSAGES ===\n';
+                
+                // Look for message-related keys
+                Object.keys(parsed).forEach(key => {
+                    if (key.includes('message') || key.includes('chat')) {
+                        output += `${key}: ${JSON.stringify(parsed[key], null, 2)}\n\n`;
+                    }
+                });
+            }
+            
+            // Check year_27_data for messages
+            const year27Data = localStorage.getItem('year_27_data');
+            if (year27Data) {
+                const parsed = JSON.parse(year27Data);
+                output += '\n=== YEAR 27 DATA MESSAGES ===\n';
+                
+                // Look for message-related keys
+                Object.keys(parsed).forEach(key => {
+                    if (key.includes('message') || key.includes('chat')) {
+                        output += `${key}: ${JSON.stringify(parsed[key], null, 2)}\n\n`;
+                    }
+                });
+                
+                // Look for nested paths like years/27/chats/*/messages
+                if (parsed.chats) {
+                    output += '\n=== CHAT MESSAGES ===\n';
+                    Object.keys(parsed.chats).forEach(chatId => {
+                        const chat = parsed.chats[chatId];
+                        if (chat && chat.messages) {
+                            output += `Chat ${chatId} messages: ${JSON.stringify(chat.messages, null, 2)}\n\n`;
+                        }
+                    });
+                }
+            }
+            
+            document.getElementById('messagesCollections').textContent = output || 'Keine Messages Collections gefunden';
+        }
+        
+        function showConversationsData() {
+            let output = '';
+            
+            // Check demoData for conversations
+            const demoData = localStorage.getItem('demoData');
+            if (demoData) {
+                const parsed = JSON.parse(demoData);
+                output += '=== DEMO DATA CONVERSATIONS ===\n';
+                
+                if (parsed.conversations) {
+                    output += JSON.stringify(parsed.conversations, null, 2) + '\n\n';
+                }
+            }
+            
+            // Check year_27_data for conversations
+            const year27Data = localStorage.getItem('year_27_data');
+            if (year27Data) {
+                const parsed = JSON.parse(year27Data);
+                output += '\n=== YEAR 27 DATA CONVERSATIONS ===\n';
+                
+                if (parsed.conversations) {
+                    output += JSON.stringify(parsed.conversations, null, 2) + '\n\n';
+                }
+                
+                if (parsed.chats) {
+                    output += '\n=== YEAR 27 DATA CHATS ===\n';
+                    output += JSON.stringify(parsed.chats, null, 2) + '\n\n';
+                }
+            }
+            
+            document.getElementById('conversationsData').textContent = output || 'Keine Conversations gefunden';
+        }
+        
+        function clearAllData() {
+            if (confirm('Wirklich alle localStorage Daten löschen?')) {
+                localStorage.clear();
+                alert('Alle Daten gelöscht!');
+            }
+        }
+        
+        function reloadDemoData() {
+            // Call the forceReloadDemoData function if available
+            if (window.forceReloadDemoData) {
+                window.forceReloadDemoData();
+                alert('Demo Daten neu geladen!');
+            } else {
+                alert('forceReloadDemoData Funktion nicht verfügbar');
+            }
+        }
+        
+        // Auto-load on page load
+        window.onload = function() {
+            showAllKeys();
+            showDemoData();
+            showYear27Data();
+            showMessagesCollections();
+            showConversationsData();
+        };
+    </script>
+</body>
+</html>

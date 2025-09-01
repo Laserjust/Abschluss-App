@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Report Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #28a745;
+        }
+        .success:hover {
+            background: #1e7e34;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .danger:hover {
+            background: #c82333;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .data-display {
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Report Data</h1>
+        <p>Dieses Tool testet und repariert die Report-Daten im localStorage.</p>
+        
+        <div>
+            <button onclick="checkCurrentData()">🔍 Aktuelle Daten prüfen</button>
+            <button onclick="setYearTo27()" class="success">📅 Jahr auf '27' setzen</button>
+            <button onclick="clearReports()" class="danger">🗑️ Reports löschen</button>
+            <button onclick="createCorrectReports()" class="success">✨ Korrekte Reports erstellen</button>
+            <button onclick="testAdminPanelMapping()">🧪 AdminPanel Mapping testen</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+        <div id="dataDisplay" class="data-display"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function displayData(title, data) {
+            const dataDiv = document.getElementById('dataDisplay');
+            dataDiv.textContent = `=== ${title} ===\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        function setYearTo27() {
+            localStorage.setItem('currentYear', '27');
+            log('✅ currentYear auf "27" gesetzt');
+        }
+
+        function checkCurrentData() {
+            try {
+                const currentYear = localStorage.getItem('currentYear');
+                log(`📅 Aktuelles Jahr: ${currentYear || 'Nicht gesetzt'}`);
+                
+                const existingData = localStorage.getItem('mockFirestoreData');
+                if (existingData) {
+                    const mockData = JSON.parse(existingData);
+                    const years = Object.keys(mockData.years || {});
+                    log(`📊 Verfügbare Jahre: ${years.join(', ')}`);
+                    
+                    years.forEach(year => {
+                        const reports = mockData.years[year].reports || [];
+                        log(`   Jahr ${year}: ${reports.length} Reports`);
+                        
+                        if (reports.length > 0) {
+                            log(`   Erste Report-Struktur in Jahr ${year}:`);
+                            const firstReport = reports[0];
+                            log(`     ID: ${firstReport.id}`);
+                            log(`     authorName: ${firstReport.authorName || 'FEHLT'}`);
+                            log(`     reportedByName: ${firstReport.reportedByName || 'FEHLT'}`);
+                            log(`     reportedAt: ${JSON.stringify(firstReport.reportedAt)}`);
+                            log(`     commentText: ${firstReport.commentText ? 'Vorhanden' : 'FEHLT'}`);
+                            
+                            displayData(`Reports Jahr ${year}`, reports);
+                        }
+                    });
+                } else {
+                    log('📭 Keine mockFirestoreData gefunden');
+                }
+            } catch (error) {
+                log('❌ Fehler beim Prüfen der Daten: ' + error.message);
+            }
+        }
+
+        function clearReports() {
+            try {
+                const existingData = localStorage.getItem('mockFirestoreData');
+                if (existingData) {
+                    const mockData = JSON.parse(existingData);
+                    
+                    Object.keys(mockData.years || {}).forEach(year => {
+                        if (mockData.years[year].reports) {
+                            mockData.years[year].reports = [];
+                        }
+                    });
+                    
+                    localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                    log('🗑️ Alle Reports gelöscht');
+                } else {
+                    log('ℹ️ Keine mockFirestoreData gefunden');
+                }
+            } catch (error) {
+                log('❌ Fehler beim Löschen der Reports: ' + error.message);
+            }
+        }
+
+        function createCorrectReports() {
+            try {
+                const currentYear = '27'; // Force to '27'
+                log(`📅 Erstelle Reports für Jahr: ${currentYear}`);
+                
+                const existingData = localStorage.getItem('mockFirestoreData');
+                let mockData = existingData ? JSON.parse(existingData) : { years: {} };
+                
+                if (!mockData.years[currentYear]) {
+                    mockData.years[currentYear] = {
+                        committees: [], projects: [], users: [], conversations: [],
+                        reports: [], 'vorabi-subjects': [], transactions: []
+                    };
+                    log(`📁 Jahr ${currentYear} Struktur erstellt`);
+                }
+                
+                // Create test reports with EXACT field names that AdminPanel expects
+                const testReports = [
+                    {
+                        id: `test-report-${Date.now()}-1`,
+                        commentText: 'Das ist ein sehr unangemessener Kommentar, der gemeldet werden sollte.',
+                        reason: 'Unangemessener Inhalt',
+                        reportedBy: 'user-reporter-1',
+                        reportedByName: 'Lisa Weber', // This should map to message.reporter
+                        authorId: 'user-author-1',
+                        authorName: 'Tom Müller', // This should map to message.reported
+                        reportedAt: {
+                            seconds: Math.floor(Date.now() / 1000),
+                            nanoseconds: 0
+                        },
+                        conversationId: 'conv-123',
+                        commentId: 'comment-456'
+                    },
+                    {
+                        id: `test-report-${Date.now()}-2`,
+                        commentText: 'Spam-Nachricht mit vielen Links und Werbung.',
+                        reason: 'Spam',
+                        reportedBy: 'user-reporter-2',
+                        reportedByName: 'Sarah Klein',
+                        authorId: 'user-author-2',
+                        authorName: 'Mike Johnson',
+                        reportedAt: {
+                            seconds: Math.floor(Date.now() / 1000) - 3600,
+                            nanoseconds: 0
+                        },
+                        conversationId: 'conv-789',
+                        commentId: 'comment-101'
+                    },
+                    {
+                        id: `test-report-${Date.now()}-3`,
+                        commentText: 'Beleidigender Kommentar über andere Schüler.',
+                        reason: 'Beleidigung',
+                        reportedBy: 'user-reporter-3',
+                        reportedByName: 'David Schmidt',
+                        authorId: 'user-author-3',
+                        authorName: 'Emma Brown',
+                        reportedAt: {
+                            seconds: Math.floor(Date.now() / 1000) - 7200,
+                            nanoseconds: 0
+                        },
+                        conversationId: 'conv-456',
+                        commentId: 'comment-789'
+                    }
+                ];
+                
+                // Replace all reports for this year
+                mockData.years[currentYear].reports = testReports;
+                
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                log(`✅ ${testReports.length} Test-Reports für Jahr ${currentYear} erstellt`);
+                testReports.forEach((report, index) => {
+                    log(`   ${index + 1}. authorName: "${report.authorName}", reportedByName: "${report.reportedByName}"`);
+                });
+                
+                displayData('Neue Reports', testReports);
+                
+            } catch (error) {
+                log('❌ Fehler beim Erstellen der Test-Reports: ' + error.message);
+            }
+        }
+
+        function testAdminPanelMapping() {
+            try {
+                log('🧪 Teste AdminPanel Mapping...');
+                
+                const currentYear = localStorage.getItem('currentYear') || '27';
+                const existingData = localStorage.getItem('mockFirestoreData');
+                
+                if (!existingData) {
+                    log('❌ Keine mockFirestoreData gefunden');
+                    return;
+                }
+                
+                const mockData = JSON.parse(existingData);
+                const reportsData = mockData.years?.[currentYear]?.reports || [];
+                
+                log(`📊 Gefunden ${reportsData.length} reports für Jahr ${currentYear}`);
+                
+                if (reportsData.length === 0) {
+                    log('❌ Keine Reports gefunden. Erstelle zuerst Reports.');
+                    return;
+                }
+                
+                // Simulate AdminPanel mapping logic
+                const mappedReports = reportsData.map(data => {
+                    log(`📄 Verarbeite Report: ${data.id}`);
+                    
+                    // Handle timestamp
+                    let formattedTimestamp = 'Unbekannt';
+                    if (data.reportedAt) {
+                        if (typeof data.reportedAt.toDate === 'function') {
+                            formattedTimestamp = data.reportedAt.toDate().toLocaleString('de-DE');
+                        } else if (data.reportedAt.seconds) {
+                            formattedTimestamp = new Date(data.reportedAt.seconds * 1000).toLocaleString('de-DE');
+                        } else if (data.reportedAt instanceof Date) {
+                            formattedTimestamp = data.reportedAt.toLocaleString('de-DE');
+                        }
+                    }
+                    
+                    const mapped = {
+                        id: data.id,
+                        content: data.commentText || data.messageText || 'Kein Text verfügbar',
+                        reporter: data.reportedByName || data.reportedBy || 'Unbekannt',
+                        reported: data.authorName || data.messageSenderName || data.messageSender || 'Unbekannt',
+                        timestamp: formattedTimestamp,
+                        reason: data.reason || 'Kein Grund angegeben'
+                    };
+                    
+                    log(`   ➤ reporter: "${mapped.reporter}" (von ${data.reportedByName || 'FEHLT'})`);
+                    log(`   ➤ reported: "${mapped.reported}" (von ${data.authorName || 'FEHLT'})`);
+                    log(`   ➤ timestamp: "${mapped.timestamp}"`);
+                    
+                    return mapped;
+                });
+                
+                log('✅ Mapping-Test abgeschlossen');
+                displayData('Gemappte Reports (wie AdminPanel sie sieht)', mappedReports);
+                
+            } catch (error) {
+                log('❌ Fehler beim Mapping-Test: ' + error.message);
+            }
+        }
+
+        // Initial check
+        log('🚀 Test Report Data Tool gestartet');
+        checkCurrentData();
+    </script>
+</body>
+</html>

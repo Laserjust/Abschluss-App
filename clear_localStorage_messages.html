@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear localStorage for Messages</title>
+</head>
+<body>
+    <h1>Clear localStorage for Messages</h1>
+    <button onclick="clearStorage()">Clear localStorage</button>
+    <div id="result"></div>
+    
+    <script>
+        function clearStorage() {
+            // Clear all localStorage data
+            localStorage.clear();
+            
+            // Show result
+            document.getElementById('result').innerHTML = '<p style="color: green;">localStorage cleared successfully! Please refresh your app.</p>';
+            
+            console.log('localStorage cleared');
+        }
+        
+        // Show current localStorage content
+        console.log('Current localStorage:', localStorage);
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            console.log(key + ':', localStorage.getItem(key));
+        }
+    </script>
+</body>
+</html>

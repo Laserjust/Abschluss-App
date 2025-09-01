@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Moderation System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Moderation System Debug</h1>
+    
+    <div class="section">
+        <h2>Current Mock Data</h2>
+        <button onclick="debugMockData()">Check Mock Data</button>
+        <div id="mockDataOutput"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Create Test Messages & Reports</h2>
+        <button onclick="createTestData()">Create Test Data</button>
+        <div id="testDataOutput"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Validate Data Consistency</h2>
+        <button onclick="validateData()">Validate Data</button>
+        <div id="validationOutput"></div>
+    </div>
+
+    <script>
+        function debugMockData() {
+            const output = document.getElementById('mockDataOutput');
+            
+            try {
+                const mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                const currentYear = new Date().getFullYear();
+                
+                output.innerHTML = `
+                    <h3>localStorage Data Structure:</h3>
+                    <pre>${JSON.stringify(mockData, null, 2)}</pre>
+                    
+                    <h3>Current Year (${currentYear}) Data:</h3>
+                    <pre>${JSON.stringify(mockData.years?.[currentYear] || 'No data for current year', null, 2)}</pre>
+                `;
+                
+                console.log('🔍 Mock Data Debug:', mockData);
+                
+            } catch (error) {
+                output.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+        
+        function createTestData() {
+            const output = document.getElementById('testDataOutput');
+            
+            try {
+                const currentYear = new Date().getFullYear();
+                let mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) {
+                    mockData.years[currentYear] = {
+                        users: [],
+                        committees: [],
+                        projects: [],
+                        conversations: [],
+                        reports: [],
+                        transactions: [],
+                        'vorabi-subjects': []
+                    };
+                }
+                
+                // Create test conversations with messages
+                const testConversations = [
+                    {
+                        id: 'conv-test-1',
+                        type: 'group',
+                        name: 'Test Chat',
+                        participants: ['user1', 'user2', 'user3'],
+                        createdAt: new Date().toISOString(),
+                        lastMessage: 'Test message that will be reported',
+                        lastMessageAt: new Date().toISOString(),
+                        lastMessageSender: 'user2'
+                    }
+                ];
+                
+                // Create test messages (these would normally be in subcollections)
+                const testMessages = [
+                    {
+                        id: 'msg-test-1',
+                        conversationId: 'conv-test-1',
+                        text: 'Das ist eine Testnachricht die gemeldet werden soll',
+                        senderId: 'user2',
+                        senderName: 'Test User 2',
+                        createdAt: new Date().toISOString(),
+                        reported: false
+                    },
+                    {
+                        id: 'msg-test-2',
+                        conversationId: 'conv-test-1',
+                        text: 'Noch eine Testnachricht',
+                        senderId: 'user3',
+                        senderName: 'Test User 3',
+                        createdAt: new Date().toISOString(),
+                        reported: false
+                    }
+                ];
+                
+                // Create test reports
+                const testReports = [
+                    {
+                        id: 'report-test-1',
+                        messageId: 'msg-test-1',
+                        conversationId: 'conv-test-1',
+                        reportedBy: 'user1',
+                        reportedByName: 'Test User 1',
+                        reportedAt: new Date(),
+                        reason: 'Unangemessener Inhalt',
+                        additionalInfo: 'Test-Meldung',
+                        messageText: 'Das ist eine Testnachricht die gemeldet werden soll',
+                        messageSender: 'user2',
+                        messageSenderName: 'Test User 2',
+                        status: 'pending',
+                        priority: 'medium',
+                        conversationType: 'group',
+                        conversationName: 'Test Chat',
+                        reportType: 'message'
+                    }
+                ];
+                
+                // Add test data
+                mockData.years[currentYear].conversations = testConversations;
+                mockData.years[currentYear].messages = testMessages; // Store messages at year level for easier access
+                mockData.years[currentYear].reports = testReports;
+                
+                // Save to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                output.innerHTML = `
+                    <p class="success">✅ Test data created successfully!</p>
+                    <h4>Created:</h4>
+                    <ul>
+                        <li>${testConversations.length} conversations</li>
+                        <li>${testMessages.length} messages</li>
+                        <li>${testReports.length} reports</li>
+                    </ul>
+                    <p class="info">Refresh the Chat page to see the changes.</p>
+                `;
+                
+                console.log('📊 Test data created:', {
+                    conversations: testConversations,
+                    messages: testMessages,
+                    reports: testReports
+                });
+                
+            } catch (error) {
+                output.innerHTML = `<p class="error">Error creating test data: ${error.message}</p>`;
+                console.error('Error creating test data:', error);
+            }
+        }
+        
+        function validateData() {
+            const output = document.getElementById('validationOutput');
+            
+            try {
+                const mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                const currentYear = new Date().getFullYear();
+                const yearData = mockData.years?.[currentYear] || {};
+                
+                const conversations = yearData.conversations || [];
+                const messages = yearData.messages || [];
+                const reports = yearData.reports || [];
+                
+                let validationResults = [];
+                
+                // Check if reports reference existing messages
+                reports.forEach(report => {
+                    const messageExists = messages.find(msg => msg.id === report.messageId);
+                    if (!messageExists) {
+                        validationResults.push(`❌ Report ${report.id} references non-existent message ${report.messageId}`);
+                    } else {
+                        validationResults.push(`✅ Report ${report.id} references valid message ${report.messageId}`);
+                    }
+                });
+                
+                // Check if messages reference existing conversations
+                messages.forEach(message => {
+                    const conversationExists = conversations.find(conv => conv.id === message.conversationId);
+                    if (!conversationExists) {
+                        validationResults.push(`❌ Message ${message.id} references non-existent conversation ${message.conversationId}`);
+                    } else {
+                        validationResults.push(`✅ Message ${message.id} references valid conversation ${message.conversationId}`);
+                    }
+                });
+                
+                output.innerHTML = `
+                    <h4>Validation Results:</h4>
+                    <ul>
+                        ${validationResults.map(result => `<li>${result}</li>`).join('')}
+                    </ul>
+                    
+                    <h4>Data Summary:</h4>
+                    <ul>
+                        <li>Conversations: ${conversations.length}</li>
+                        <li>Messages: ${messages.length}</li>
+                        <li>Reports: ${reports.length}</li>
+                    </ul>
+                    
+                    <h4>Report Message IDs:</h4>
+                    <pre>${JSON.stringify(reports.map(r => r.messageId), null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                output.innerHTML = `<p class="error">Validation error: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-run debug on page load
+        window.onload = function() {
+            debugMockData();
+        };
+    </script>
+</body>
+</html>

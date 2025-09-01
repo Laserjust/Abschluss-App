@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Console</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; }
+        #console { background: #000; color: #0f0; padding: 10px; height: 400px; overflow-y: auto; font-family: monospace; }
+        .log { margin: 2px 0; }
+    </style>
+</head>
+<body>
+    <h1>Debug Console für NotificationCenter</h1>
+    
+    <div class="section">
+        <h2>Actions</h2>
+        <button onclick="createTestNotifications()">Create Test Notifications</button>
+        <button onclick="openAppAndMonitor()">Open App & Monitor Console</button>
+        <button onclick="checkLocalStorage()">Check localStorage</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <div class="section">
+        <h2>Console Output</h2>
+        <div id="console"></div>
+    </div>
+
+    <script>
+        let consoleDiv = document.getElementById('console');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log';
+            logEntry.style.color = type === 'error' ? '#f00' : type === 'warn' ? '#ff0' : '#0f0';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            consoleDiv.appendChild(logEntry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function createTestNotifications() {
+            try {
+                const currentYear = new Date().getFullYear();
+                let mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) mockData.years[currentYear] = {};
+                if (!mockData.years[currentYear].notifications) mockData.years[currentYear].notifications = [];
+                
+                // Create notifications for all demo user types
+                const userIds = ['demo-user', 'admin-test-uid', 'teacher-test-uid', 'student-test-uid'];
+                
+                userIds.forEach((userId, index) => {
+                    const notification = {
+                        id: `test-${userId}-${Date.now()}-${index}`,
+                        userId: userId,
+                        type: 'warning',
+                        title: `Test Verwarnung für ${userId}`,
+                        body: `Dies ist eine Test-Verwarnung für ${userId}.`,
+                        priority: 'high',
+                        createdAt: new Date().toISOString(),
+                        read: false,
+                        reportId: `test-report-${userId}-${Date.now()}`,
+                        reason: 'Test Verwarnung',
+                        messageContent: `Test Nachricht für ${userId}`
+                    };
+                    
+                    mockData.years[currentYear].notifications.push(notification);
+                    log(`Created notification for ${userId}`);
+                });
+                
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                log('All test notifications created and saved to localStorage', 'info');
+                
+            } catch (error) {
+                log(`Error creating notifications: ${error.message}`, 'error');
+            }
+        }
+        
+        function openAppAndMonitor() {
+            log('Opening app in new window...');
+            const appWindow = window.open('http://localhost:3000', '_blank');
+            
+            // Try to monitor the app's console (this might not work due to CORS)
+            setTimeout(() => {
+                log('App should be loaded. Check the browser console in the app window for debug messages.');
+                log('Look for messages starting with "📱 NotificationCenter:"');
+            }, 2000);
+        }
+        
+        function checkLocalStorage() {
+            try {
+                const data = localStorage.getItem('mockFirestoreData');
+                if (data) {
+                    const mockData = JSON.parse(data);
+                    const currentYear = new Date().getFullYear();
+                    const notifications = mockData.years?.[currentYear]?.notifications || [];
+                    
+                    log(`Found ${notifications.length} total notifications in localStorage`);
+                    
+                    const userCounts = {};
+                    notifications.forEach(n => {
+                        userCounts[n.userId] = (userCounts[n.userId] || 0) + 1;
+                    });
+                    
+                    Object.entries(userCounts).forEach(([userId, count]) => {
+                        log(`${userId}: ${count} notifications`);
+                    });
+                    
+                } else {
+                    log('No mockFirestoreData found in localStorage', 'warn');
+                }
+            } catch (error) {
+                log(`Error checking localStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearConsole() {
+            consoleDiv.innerHTML = '';
+        }
+        
+        // Initial check
+        window.onload = function() {
+            log('Debug Console loaded');
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

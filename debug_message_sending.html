@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Message Sending</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Message Sending</h1>
+    
+    <div class="debug-section">
+        <h3>Test Message Sending</h3>
+        <button onclick="testMessageSending()">Test Send Message</button>
+        <button onclick="checkLocalStorage()">Check localStorage</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        <div id="result" class="log"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>Console Logs</h3>
+        <div id="console-logs" class="log"></div>
+    </div>
+
+    <script>
+        let originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn
+        };
+
+        function logToDiv(type, ...args) {
+            const logsDiv = document.getElementById('console-logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            logsDiv.innerHTML += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            
+            // Call original console method
+            originalConsole[type](...args);
+        }
+
+        console.log = (...args) => logToDiv('log', ...args);
+        console.error = (...args) => logToDiv('error', ...args);
+        console.warn = (...args) => logToDiv('warn', ...args);
+
+        function testMessageSending() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing message sending...\n';
+            
+            try {
+                // Simulate opening the chat page
+                window.open('http://localhost:5173/chat', '_blank');
+                resultDiv.innerHTML += 'Chat page opened. Check console logs for debug information.\n';
+                resultDiv.className = 'log success';
+            } catch (error) {
+                resultDiv.innerHTML += `Error: ${error.message}\n`;
+                resultDiv.className = 'log error';
+            }
+        }
+
+        function checkLocalStorage() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Checking localStorage...\n';
+            
+            try {
+                const keys = Object.keys(localStorage);
+                resultDiv.innerHTML += `Total localStorage keys: ${keys.length}\n\n`;
+                
+                keys.forEach(key => {
+                    if (key.includes('message') || key.includes('chat') || key.includes('conversation')) {
+                        const value = localStorage.getItem(key);
+                        resultDiv.innerHTML += `${key}: ${value.substring(0, 200)}${value.length > 200 ? '...' : ''}\n\n`;
+                    }
+                });
+                
+                // Check pending messages specifically
+                const pendingMessages = localStorage.getItem('pendingMessages');
+                if (pendingMessages) {
+                    resultDiv.innerHTML += `Pending Messages: ${pendingMessages}\n`;
+                }
+                
+                resultDiv.className = 'log success';
+            } catch (error) {
+                resultDiv.innerHTML += `Error: ${error.message}\n`;
+                resultDiv.className = 'log error';
+            }
+        }
+
+        function clearConsole() {
+            document.getElementById('console-logs').innerHTML = '';
+            document.getElementById('result').innerHTML = '';
+        }
+
+        // Auto-refresh localStorage check every 5 seconds
+        setInterval(() => {
+            const pendingMessages = localStorage.getItem('pendingMessages');
+            if (pendingMessages && pendingMessages !== '[]') {
+                console.log('Pending messages found:', pendingMessages);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

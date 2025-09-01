@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Notification Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 15px 20px; margin: 10px; font-size: 16px; }
+        .info { background: #e3f2fd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Simple Notification Test</h1>
+    
+    <div class="info">
+        <p><strong>Anleitung:</strong></p>
+        <ol>
+            <li>Klicken Sie auf "Create Notification for Admin"</li>
+            <li>Klicken Sie auf "Open App"</li>
+            <li>Loggen Sie sich als Admin ein (admin@rse-abschluss27.de / admin123)</li>
+            <li>Schauen Sie auf das Benachrichtigungssymbol oben rechts</li>
+        </ol>
+    </div>
+    
+    <button onclick="createNotificationForAdmin()">Create Notification for Admin</button>
+    <button onclick="createNotificationForTeacher()">Create Notification for Teacher</button>
+    <button onclick="createNotificationForStudent()">Create Notification for Student</button>
+    <button onclick="openApp()">Open App</button>
+    <button onclick="checkStorage()">Check Storage</button>
+    
+    <div id="status"></div>
+
+    <script>
+        function createNotificationForAdmin() {
+            createNotificationForUser('admin-test-uid', 'Administrator');
+        }
+        
+        function createNotificationForTeacher() {
+            createNotificationForUser('teacher-test-uid', 'Lehrer');
+        }
+        
+        function createNotificationForStudent() {
+            createNotificationForUser('student-test-uid', 'Schüler');
+        }
+        
+        function createNotificationForUser(userId, userType) {
+            try {
+                const currentYear = new Date().getFullYear();
+                let mockData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                // Initialize structure
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) mockData.years[currentYear] = {};
+                if (!mockData.years[currentYear].notifications) mockData.years[currentYear].notifications = [];
+                
+                const notification = {
+                    id: `simple-test-${userId}-${Date.now()}`,
+                    userId: userId,
+                    type: 'warning',
+                    title: `Test Verwarnung für ${userType}`,
+                    body: `Sie haben eine Test-Verwarnung erhalten. Dies ist ein Test für ${userType}.`,
+                    priority: 'high',
+                    createdAt: new Date().toISOString(),
+                    read: false,
+                    reportId: `simple-report-${userId}-${Date.now()}`,
+                    reason: 'Test Verwarnung',
+                    messageContent: `Test Nachricht für ${userType}`
+                };
+                
+                mockData.years[currentYear].notifications.push(notification);
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                document.getElementById('status').innerHTML = 
+                    `<p style="color: green;">✅ Benachrichtigung für ${userType} (${userId}) erstellt!</p>`;
+                    
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    `<p style="color: red;">❌ Fehler: ${error.message}</p>`;
+            }
+        }
+        
+        function openApp() {
+            window.open('http://localhost:3000', '_blank');
+        }
+        
+        function checkStorage() {
+            try {
+                const data = localStorage.getItem('mockFirestoreData');
+                if (data) {
+                    const mockData = JSON.parse(data);
+                    const currentYear = new Date().getFullYear();
+                    const notifications = mockData.years?.[currentYear]?.notifications || [];
+                    
+                    let html = `<p><strong>localStorage Status:</strong></p>`;
+                    html += `<p>Total Benachrichtigungen: ${notifications.length}</p>`;
+                    
+                    const userCounts = {};
+                    notifications.forEach(n => {
+                        userCounts[n.userId] = (userCounts[n.userId] || 0) + 1;
+                    });
+                    
+                    html += '<ul>';
+                    Object.entries(userCounts).forEach(([userId, count]) => {
+                        html += `<li>${userId}: ${count} Benachrichtigungen</li>`;
+                    });
+                    html += '</ul>';
+                    
+                    document.getElementById('status').innerHTML = html;
+                } else {
+                    document.getElementById('status').innerHTML = 
+                        '<p style="color: orange;">⚠️ Keine mockFirestoreData im localStorage gefunden</p>';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    `<p style="color: red;">❌ Fehler beim Prüfen: ${error.message}</p>`;
+            }
+        }
+        
+        // Check storage on load
+        window.onload = function() {
+            checkStorage();
+        };
+    </script>
+</body>
+</html>

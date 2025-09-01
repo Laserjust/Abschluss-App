@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LocalStorage Check</title>
+</head>
+<body>
+    <h1>LocalStorage Data Check</h1>
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        // Check mockFirestoreData
+        const mockData = localStorage.getItem('mockFirestoreData');
+        if (mockData) {
+            const parsed = JSON.parse(mockData);
+            output.innerHTML += '<h2>MockFirestore Data Found:</h2>';
+            output.innerHTML += '<pre>' + JSON.stringify(parsed, null, 2) + '</pre>';
+            
+            // Check for reports specifically
+            const currentYear = new Date().getFullYear();
+            const reports = parsed.years?.[currentYear]?.reports;
+            if (reports) {
+                output.innerHTML += '<h3>Reports for ' + currentYear + ':</h3>';
+                output.innerHTML += '<pre>' + JSON.stringify(reports, null, 2) + '</pre>';
+            } else {
+                output.innerHTML += '<p>No reports found for ' + currentYear + '</p>';
+            }
+            
+            // Check for notifications
+            const notifications = parsed.years?.[currentYear]?.notifications;
+            if (notifications) {
+                output.innerHTML += '<h3>Notifications for ' + currentYear + ':</h3>';
+                output.innerHTML += '<pre>' + JSON.stringify(notifications, null, 2) + '</pre>';
+            } else {
+                output.innerHTML += '<p>No notifications found for ' + currentYear + '</p>';
+            }
+        } else {
+            output.innerHTML += '<p>No mockFirestoreData found in localStorage</p>';
+        }
+        
+        // List all localStorage keys
+        output.innerHTML += '<h2>All localStorage keys:</h2>';
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            output.innerHTML += '<p>' + key + '</p>';
+        }
+    </script>
+</body>
+</html>

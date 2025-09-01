@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login als Lehrer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007AFF;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Login als Lehrer</h1>
+        
+        <div class="info">
+            <strong>Test-Anmeldedaten:</strong><br>
+            E-Mail: lehrer@rse-abschluss2025.de<br>
+            Passwort: lehrer123
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">E-Mail:</label>
+                <input type="email" id="email" value="lehrer@rse-abschluss2025.de" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Passwort:</label>
+                <input type="password" id="password" value="lehrer123" required>
+            </div>
+            
+            <button type="submit">Als Lehrer anmelden</button>
+            <button type="button" onclick="loginAsAdmin()">Als Admin anmelden</button>
+            <button type="button" onclick="checkCurrentUser()">Aktueller Benutzer</button>
+        </form>
+        
+        <div id="result"></div>
+        
+        <div style="margin-top: 30px;">
+            <button onclick="window.location.href='http://localhost:5173/abi-vorabi'">Zu Abi/Vorabi Seite</button>
+            <button onclick="window.location.href='http://localhost:5173'">Zur Hauptseite</button>
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
+        }
+
+        function checkCurrentUser() {
+            // Check localStorage for current user
+            const testUser = localStorage.getItem('testUser');
+            const mockData = localStorage.getItem('mockFirestoreData');
+            
+            let message = '<strong>Aktueller Benutzerstatus:</strong><br>';
+            
+            if (testUser) {
+                const user = JSON.parse(testUser);
+                message += `Angemeldet als: ${user.displayName} (${user.email})<br>`;
+                message += `Rolle: ${user.role}<br>`;
+                message += `UID: ${user.uid}<br>`;
+            } else {
+                message += 'Kein Benutzer angemeldet<br>';
+            }
+            
+            if (mockData) {
+                message += '<br><strong>MockFirestore Daten vorhanden:</strong> Ja';
+            } else {
+                message += '<br><strong>MockFirestore Daten vorhanden:</strong> Nein';
+            }
+            
+            showResult(message);
+        }
+
+        function loginAsAdmin() {
+            const currentYear = new Date().getFullYear();
+            const adminUser = {
+                uid: 'admin-test-uid',
+                email: `admin@rse-abschluss${currentYear}.de`,
+                displayName: 'Administrator',
+                role: 'admin',
+                firstName: 'Max',
+                lastName: 'Mustermann',
+                committees: ['Abi-Komitee', 'Finanz-Komitee'],
+                committeeRoles: { 'Abi-Komitee': 'leader', 'Finanz-Komitee': 'member' },
+                yearGroup: currentYear.toString()
+            };
+            
+            localStorage.setItem('testUser', JSON.stringify(adminUser));
+            showResult(`Erfolgreich als Administrator angemeldet!<br>Rolle: ${adminUser.role}<br>E-Mail: ${adminUser.email}`);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const currentYear = new Date().getFullYear();
+            
+            // Simulate teacher login
+            if (email === `lehrer@rse-abschluss${currentYear}.de` && password === 'lehrer123') {
+                const teacherUser = {
+                    uid: 'teacher-test-uid',
+                    email: email,
+                    displayName: 'Herr Schmidt',
+                    role: 'teacher',
+                    firstName: 'Thomas',
+                    lastName: 'Schmidt',
+                    committees: ['Abi-Komitee'],
+                    committeeRoles: { 'Abi-Komitee': 'advisor' },
+                    yearGroup: currentYear.toString()
+                };
+                
+                localStorage.setItem('testUser', JSON.stringify(teacherUser));
+                showResult(`Erfolgreich als Lehrer angemeldet!<br>Rolle: ${teacherUser.role}<br>E-Mail: ${teacherUser.email}`);
+            } else {
+                showResult('Ungültige Anmeldedaten!', true);
+            }
+        });
+
+        // Check current user on page load
+        window.onload = function() {
+            checkCurrentUser();
+        };
+    </script>
+</body>
+</html>

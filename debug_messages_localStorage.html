@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Messages localStorage</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .button:hover { background: #0056b3; }
+        .data { background: #f8f9fa; padding: 10px; margin: 10px 0; white-space: pre-wrap; font-family: monospace; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Debug Messages localStorage</h1>
+    
+    <div class="section">
+        <h2>Current localStorage Content</h2>
+        <button class="button" onclick="showLocalStorage()">Show localStorage</button>
+        <button class="button" onclick="clearLocalStorage()">Clear localStorage</button>
+        <div id="localStorage-content"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Message Collections</h2>
+        <button class="button" onclick="showMessageCollections()">Show Message Collections</button>
+        <div id="message-collections"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Force Reload Demo Data</h2>
+        <button class="button" onclick="forceReloadDemoData()">Force Reload Demo Data</button>
+        <div id="reload-result"></div>
+    </div>
+    
+    <script>
+        function showLocalStorage() {
+            const content = document.getElementById('localStorage-content');
+            try {
+                const data = localStorage.getItem('mockFirestoreData');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    content.innerHTML = '<div class="data">' + JSON.stringify(parsed, null, 2) + '</div>';
+                } else {
+                    content.innerHTML = '<div class="error">No mockFirestoreData found in localStorage</div>';
+                }
+            } catch (error) {
+                content.innerHTML = '<div class="error">Error reading localStorage: ' + error.message + '</div>';
+            }
+        }
+        
+        function showMessageCollections() {
+            const content = document.getElementById('message-collections');
+            try {
+                const data = localStorage.getItem('mockFirestoreData');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    let messageCollections = {};
+                    
+                    // Check for message collections in current year
+                    if (parsed.years) {
+                        Object.keys(parsed.years).forEach(year => {
+                            const yearData = parsed.years[year];
+                            Object.keys(yearData).forEach(key => {
+                                if (key.includes('conversations/') && key.includes('/messages')) {
+                                    messageCollections[year + '/' + key] = yearData[key];
+                                }
+                            });
+                        });
+                    }
+                    
+                    content.innerHTML = '<div class="data">' + JSON.stringify(messageCollections, null, 2) + '</div>';
+                } else {
+                    content.innerHTML = '<div class="error">No mockFirestoreData found</div>';
+                }
+            } catch (error) {
+                content.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+        
+        function clearLocalStorage() {
+            localStorage.clear();
+            document.getElementById('localStorage-content').innerHTML = '<div class="success">localStorage cleared!</div>';
+        }
+        
+        function forceReloadDemoData() {
+            const result = document.getElementById('reload-result');
+            try {
+                // Clear localStorage first
+                localStorage.clear();
+                
+                // Create demo data structure
+                const currentYear = new Date().getFullYear();
+                const demoData = {
+                    years: {
+                        [currentYear]: {
+                            users: [],
+                            conversations: [
+                                {
+                                    id: 'test-conv-1',
+                                    name: 'Abi-Komitee Chat',
+                                    participants: ['admin-test-uid', 'student-test-uid', 'student-2-uid', 'student-3-uid'],
+                                    type: 'group',
+                                    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                                    lastMessage: 'Wann ist nochmal unser nächstes Treffen?',
+                                    lastMessageTime: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+                                },
+                                {
+                                    id: 'test-conv-2',
+                                    name: 'Anna & Lisa',
+                                    participants: ['student-test-uid', 'student-2-uid'],
+                                    type: 'direct',
+                                    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+                                    lastMessage: 'Hallo, wie geht es dir?',
+                                    lastMessageTime: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+                                }
+                            ],
+                            'conversations/test-conv-1/messages': [
+                                {
+                                    id: 'msg-1-1',
+                                    text: 'Hallo zusammen! Wie läuft die Vorbereitung für das Abitur?',
+                                    senderId: 'admin-test-uid',
+                                    senderName: 'Max Mustermann',
+                                    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+                                    conversationId: 'test-conv-1',
+                                    type: 'text'
+                                },
+                                {
+                                    id: 'msg-1-2',
+                                    text: 'Bei mir läuft es ganz gut! Mathe ist noch etwas schwierig.',
+                                    senderId: 'student-test-uid',
+                                    senderName: 'Anna Müller',
+                                    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+                                    conversationId: 'test-conv-1',
+                                    type: 'text'
+                                }
+                            ],
+                            'conversations/test-conv-2/messages': [
+                                {
+                                    id: 'msg-2-1',
+                                    text: 'Hallo Anna! Wie geht es dir denn so?',
+                                    senderId: 'student-2-uid',
+                                    senderName: 'Lisa Weber',
+                                    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+                                    conversationId: 'test-conv-2',
+                                    type: 'text'
+                                },
+                                {
+                                    id: 'msg-2-2',
+                                    text: 'Hi Lisa! Mir geht es gut, danke!',
+                                    senderId: 'student-test-uid',
+                                    senderName: 'Anna Müller',
+                                    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
+                                    conversationId: 'test-conv-2',
+                                    type: 'text'
+                                }
+                            ]
+                        }
+                    }
+                };
+                
+                localStorage.setItem('mockFirestoreData', JSON.stringify(demoData));
+                result.innerHTML = '<div class="success">Demo data reloaded successfully! Please refresh your app.</div>';
+            } catch (error) {
+                result.innerHTML = '<div class="error">Error reloading demo data: ' + error.message + '</div>';
+            }
+        }
+        
+        // Auto-load localStorage content on page load
+        window.onload = function() {
+            showLocalStorage();
+            showMessageCollections();
+        };
+    </script>
+</body>
+</html>

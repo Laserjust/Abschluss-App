@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Reports</title>
+</head>
+<body>
+    <h1>Test Report Storage</h1>
+    <button onclick="testReportStorage()">Test Report Storage</button>
+    <button onclick="checkLocalStorage()">Check LocalStorage</button>
+    <div id="output"></div>
+
+    <script>
+        // Mock the necessary functions
+        const mockServerTimestamp = () => new Date();
+        
+        function testReportStorage() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h3>Testing Report Storage...</h3>';
+            
+            try {
+                // Simulate adding a report to localStorage
+                const currentYear = '27';
+                const reportData = {
+                    id: 'test-report-' + Date.now(),
+                    type: 'comment',
+                    reportedBy: 'test-user',
+                    reportedByName: 'Test User',
+                    commentId: 'test-comment-123',
+                    commentText: 'This is a test comment',
+                    reason: 'Spam',
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Get existing data
+                let storedData = JSON.parse(localStorage.getItem('mockFirestoreData') || '{}');
+                
+                // Initialize structure if needed
+                if (!storedData.years) storedData.years = {};
+                if (!storedData.years[currentYear]) storedData.years[currentYear] = {};
+                if (!storedData.years[currentYear].reports) storedData.years[currentYear].reports = [];
+                
+                // Add the report
+                storedData.years[currentYear].reports.push(reportData);
+                
+                // Save back to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(storedData));
+                
+                output.innerHTML += '<p style="color: green;">✅ Report added successfully!</p>';
+                output.innerHTML += '<pre>' + JSON.stringify(reportData, null, 2) + '</pre>';
+                
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+        
+        function checkLocalStorage() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h3>LocalStorage Contents:</h3>';
+            
+            try {
+                const data = localStorage.getItem('mockFirestoreData');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    output.innerHTML += '<pre>' + JSON.stringify(parsed, null, 2) + '</pre>';
+                    
+                    // Check specifically for reports
+                    if (parsed.years) {
+                        Object.keys(parsed.years).forEach(year => {
+                            if (parsed.years[year].reports && parsed.years[year].reports.length > 0) {
+                                output.innerHTML += `<p style="color: green;">✅ Found ${parsed.years[year].reports.length} reports for year ${year}</p>`;
+                            } else {
+                                output.innerHTML += `<p style="color: orange;">⚠️ No reports found for year ${year}</p>`;
+                            }
+                        });
+                    }
+                } else {
+                    output.innerHTML += '<p style="color: red;">❌ No mockFirestoreData found in localStorage</p>';
+                }
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">❌ Error reading localStorage: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

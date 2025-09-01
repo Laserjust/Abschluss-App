@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear localStorage</title>
+</head>
+<body>
+    <h1>Clear localStorage</h1>
+    <button onclick="clearStorage()">Clear localStorage</button>
+    <div id="status"></div>
+    
+    <script>
+        function clearStorage() {
+            try {
+                localStorage.clear();
+                document.getElementById('status').innerHTML = '<p style="color: green;">localStorage cleared successfully!</p>';
+                console.log('localStorage cleared');
+            } catch (error) {
+                document.getElementById('status').innerHTML = '<p style="color: red;">Error clearing localStorage: ' + error.message + '</p>';
+                console.error('Error clearing localStorage:', error);
+            }
+        }
+        
+        // Show current localStorage content
+        window.onload = function() {
+            const keys = Object.keys(localStorage);
+            console.log('Current localStorage keys:', keys);
+            if (keys.length > 0) {
+                document.getElementById('status').innerHTML = '<p>Found ' + keys.length + ' localStorage items. Click button to clear.</p>';
+            } else {
+                document.getElementById('status').innerHTML = '<p>localStorage is already empty.</p>';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Verwarnungsbenachrichtigung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #f57c00;
+        }
+        .button.danger {
+            background-color: #f44336;
+        }
+        .button.danger:hover {
+            background-color: #d32f2f;
+        }
+        .button.success {
+            background-color: #4caf50;
+        }
+        .button.success:hover {
+            background-color: #388e3c;
+        }
+        .output {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .user-select {
+            margin: 10px 0;
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Test Verwarnungsbenachrichtigung</h1>
+        <p>Dieses Tool testet die Erstellung von Verwarnungsbenachrichtigungen im Demo-Modus.</p>
+        
+        <div class="user-select">
+            <label for="userSelect">Benutzer für Verwarnung auswählen:</label>
+            <select id="userSelect">
+                <option value="demo-admin">Admin (demo-admin)</option>
+                <option value="demo-teacher">Lehrer (demo-teacher)</option>
+                <option value="demo-student">Schüler (demo-student)</option>
+                <option value="demo-user">Demo User (demo-user)</option>
+            </select>
+        </div>
+        
+        <button class="button" onclick="createWarningNotification()">⚠️ Verwarnungsbenachrichtigung erstellen</button>
+        <button class="button success" onclick="checkNotifications()">📋 Benachrichtigungen prüfen</button>
+        <button class="button" onclick="openApp()">🚀 App öffnen</button>
+        <button class="button danger" onclick="clearStorage()">🗑️ localStorage löschen</button>
+        
+        <div id="output" class="output"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+
+        function createWarningNotification() {
+            const selectedUserId = document.getElementById('userSelect').value;
+            log(`🚨 Erstelle Verwarnungsbenachrichtigung für Benutzer: ${selectedUserId}`);
+            
+            try {
+                // Get current year
+                const currentYear = new Date().getFullYear();
+                log(`📅 Aktuelles Jahr: ${currentYear}`);
+                
+                // Get existing data
+                const existingData = localStorage.getItem('mockFirestoreData');
+                let mockData = existingData ? JSON.parse(existingData) : {};
+                
+                // Ensure year structure exists
+                if (!mockData.years) mockData.years = {};
+                if (!mockData.years[currentYear]) mockData.years[currentYear] = {};
+                if (!mockData.years[currentYear].notifications) mockData.years[currentYear].notifications = [];
+                
+                // Create warning notification
+                const warningNotification = {
+                    id: `warning-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    userId: selectedUserId,
+                    type: 'warning',
+                    title: 'Verwarnung erhalten',
+                    body: 'Ihre Nachricht wurde gemeldet und überprüft. Bitte beachten Sie unsere Community-Richtlinien.',
+                    priority: 'high',
+                    createdAt: new Date(),
+                    read: false,
+                    reportId: `test-report-${Date.now()}`,
+                    reason: 'Gemeldeter Inhalt',
+                    messageContent: 'Test-Nachricht für Verwarnungstest'
+                };
+                
+                // Add to notifications array
+                mockData.years[currentYear].notifications.push(warningNotification);
+                
+                // Save back to localStorage
+                localStorage.setItem('mockFirestoreData', JSON.stringify(mockData));
+                
+                log(`✅ Verwarnungsbenachrichtigung erstellt:`);
+                log(`   - ID: ${warningNotification.id}`);
+                log(`   - Benutzer: ${selectedUserId}`);
+                log(`   - Typ: ${warningNotification.type}`);
+                log(`   - Titel: ${warningNotification.title}`);
+                log(`   - Priorität: ${warningNotification.priority}`);
+                
+                // Check total notifications
+                const totalNotifications = mockData.years[currentYear].notifications.length;
+                log(`📊 Gesamtanzahl Benachrichtigungen für ${currentYear}: ${totalNotifications}`);
+                
+            } catch (error) {
+                log(`❌ Fehler beim Erstellen der Verwarnungsbenachrichtigung: ${error.message}`);
+                console.error('Error details:', error);
+            }
+        }
+
+        function checkNotifications() {
+            log('🔍 Prüfe alle Benachrichtigungen im localStorage...');
+            
+            try {
+                const existingData = localStorage.getItem('mockFirestoreData');
+                if (!existingData) {
+                    log('❌ Keine Daten im localStorage gefunden');
+                    return;
+                }
+                
+                const mockData = JSON.parse(existingData);
+                const currentYear = new Date().getFullYear();
+                
+                log(`📅 Prüfe Daten für Jahr: ${currentYear}`);
+                
+                if (!mockData.years || !mockData.years[currentYear]) {
+                    log(`❌ Keine Daten für Jahr ${currentYear} gefunden`);
+                    return;
+                }
+                
+                const notifications = mockData.years[currentYear].notifications || [];
+                log(`📊 Gefundene Benachrichtigungen: ${notifications.length}`);
+                
+                if (notifications.length === 0) {
+                    log('📭 Keine Benachrichtigungen vorhanden');
+                    return;
+                }
+                
+                // Group by user
+                const notificationsByUser = {};
+                notifications.forEach(notification => {
+                    const userId = notification.userId || 'unknown';
+                    if (!notificationsByUser[userId]) {
+                        notificationsByUser[userId] = [];
+                    }
+                    notificationsByUser[userId].push(notification);
+                });
+                
+                log('📋 Benachrichtigungen nach Benutzer:');
+                Object.keys(notificationsByUser).forEach(userId => {
+                    const userNotifications = notificationsByUser[userId];
+                    log(`   👤 ${userId}: ${userNotifications.length} Benachrichtigungen`);
+                    
+                    userNotifications.forEach(notification => {
+                        log(`      - ${notification.type}: ${notification.title} (${notification.read ? 'gelesen' : 'ungelesen'})`);
+                    });
+                });
+                
+            } catch (error) {
+                log(`❌ Fehler beim Prüfen der Benachrichtigungen: ${error.message}`);
+                console.error('Error details:', error);
+            }
+        }
+
+        function openApp() {
+            log('🚀 Öffne Hauptanwendung...');
+            window.open('http://localhost:5173', '_blank');
+        }
+
+        function clearStorage() {
+            if (confirm('Sind Sie sicher, dass Sie den localStorage löschen möchten?')) {
+                localStorage.clear();
+                log('🗑️ localStorage wurde geleert');
+            }
+        }
+
+        // Initial check
+        window.onload = function() {
+            log('🔧 Verwarnungsbenachrichtigungs-Test gestartet');
+            checkNotifications();
+        };
+    </script>
+</body>
+</html>
